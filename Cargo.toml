@@ -1,0 +1,11 @@
+[package]
+name = "Easebuild"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+colored = "2.1.0"
+mlua = { version = "0.9.9", features = ["luau", "luau-jit", "async", "macros", "serialize"] }
+serde = "1.0.204"
+serde_json = "1.0.120"
+sysinfo = "0.30.13"
