@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+clap = { version = "4.5.10", features = ["derive", "cargo"] }
 colored = "2.1.0"
 mlua = { version = "0.9.9", features = ["luau", "luau-jit", "async", "macros", "serialize"] }
 serde = "1.0.204"
