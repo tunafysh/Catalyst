@@ -7,7 +7,7 @@ use sysinfo::System;
 mod structs;
 mod util;
 
-const EASEBUILD_VERSION: &str = "0.1";
+const CATALYST_VERSION: &str = "0.1";
 
 fn args() -> ArgMatches {
     let styles = Styles::styled()
@@ -21,7 +21,7 @@ fn args() -> ArgMatches {
     
     let cmd = command!() // requires `cargo` feature
         .styles(styles)
-        .version(EASEBUILD_VERSION)
+        .version(CATALYST_VERSION)
         .arg(
             arg!(
                 -c --config <FILE> "Configuration file to use, default: ./config.esb"
@@ -54,14 +54,16 @@ fn main() {
         flags: None,
     };
 
+    let mut checklist: structs::Checklist;
+
     let matches = args();
     
     if matches.get_flag("verbose") {
         let sys = System::new_all();
-        println!("{}", format!("Easebuild. version {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB", EASEBUILD_VERSION.purple(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple()).blue());
+        println!("{}", format!("Catalyst. version {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB", CATALYST_VERSION.purple(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple()).blue());
     }
     else {
-        println!("{}", format!("Easebuild, version {}, Platform: {}", EASEBUILD_VERSION.purple(), System::name().unwrap().purple()).blue());
+        println!("{}", format!("Catalyst, version {}, Platform: {}", CATALYST_VERSION.purple(), System::name().unwrap().purple()).blue());
     }
 
     let config = matches.get_many::<String>("config").unwrap_or_default().into_iter().map(|v| v.as_str()).collect::<Vec<_>>();

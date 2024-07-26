@@ -11,6 +11,6 @@ pub struct Config {
     pub flags: Option<Vec<String>>,
 }
 
-// pub struct Checklist {
-//     pub tasks: Vec<String>
-// }
+pub struct Checklist {
+    pub tasks: Vec<String>
+}
