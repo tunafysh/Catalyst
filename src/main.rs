@@ -1,6 +1,6 @@
 use std::{ process, fs };
 use colored::Colorize;
-use clap::{arg, builder::Styles, command, value_parser, ArgAction, ArgMatches};
+use clap::{arg, builder::Styles, command, value_parser, ArgAction, ArgMatches, Command};
 use anstyle::{Style, Color, AnsiColor};
 use sysinfo::System;
 
@@ -24,7 +24,7 @@ fn args() -> ArgMatches {
         .version(CATALYST_VERSION)
         .arg(
             arg!(
-                -c --config <FILE> "Configuration file to use, default: ./config.esb"
+                -c --config <FILE> "Configuration file to use, default: ./config.cly"
             )
             // We don't have syntax yet for optional options, so manually calling `required`
             .required(false)
@@ -37,7 +37,11 @@ fn args() -> ArgMatches {
         .action(ArgAction::SetTrue)
         .required(false)
     )
-        .get_matches();
+    .subcommand(
+        Command::new("init").about("Initializes a new configuration file")
+    )
+
+    .get_matches();
 
     cmd
 }
@@ -48,13 +52,11 @@ fn main() {
         name: String::new(),
         version: None,
         platform: String::new(),
-        arch: String::new(),
         file_extension: String::new(),
+        hooks: Vec::new(),
         compiler: None,
         flags: None,
     };
-
-    let mut checklist: structs::Checklist;
 
     let matches = args();
     
@@ -66,20 +68,33 @@ fn main() {
         println!("{}", format!("Catalyst, version {}, Platform: {}", CATALYST_VERSION.purple(), System::name().unwrap().purple()).blue());
     }
 
+    match matches.subcommand() {
+        Some(("init", _)) => {
+            util::verbose(matches.clone(), "Initializing configuration...".to_string());
+            let gensuccess = util::generate();
+            process::exit(gensuccess as i32);
+        }
+        _ => {}
+    }
+
     let config = matches.get_many::<String>("config").unwrap_or_default().into_iter().map(|v| v.as_str()).collect::<Vec<_>>();
     if config.len() != 0 {
+        if !config[0].contains(".cly") {
+            println!("{}", "Not a configuration file.".to_string().red());
+            process::exit(2);
+        }
         util::verbose(matches.clone(), format!("{}", format!("Using configuration file: {}", config[0].purple()).blue()));
     }
     else {
         util::verbose(matches.clone(), "Scanning for config files...".to_string());
-        if let Some(path) = util::find_file("./", "config.esb") {
+        if let Some(path) = util::find_file("./", "config.cly") {
             util::verbose(matches.clone(), format!("Found config file: {}", path.display().to_string().purple()));
             let config = path.display().to_string();
             util::verbose(matches.clone(), "Parsing...".to_string());
             let configfile = match fs::read_to_string(config) {
                 Err(_e) => {
                     println!("{}", "Cannot read configuration file.".to_string().red());
-                    process::exit(2);
+                    process::exit(3);
                 }
                 Ok(cf) => cf
             };
@@ -87,7 +102,7 @@ fn main() {
             conf = match serde_json::from_str(configfile.as_str()) {
                 Err(_e) => {
                     println!("{}", "Inavlid configuration file.".to_string().red());
-                    process::exit(3);
+                    process::exit(4);
                 }
                 Ok(c) => c
             } 
