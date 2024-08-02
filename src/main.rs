@@ -3,8 +3,7 @@ use colored::Colorize;
 use clap::{arg, builder::Styles, command, value_parser, ArgAction, ArgMatches, Command};
 use anstyle::{Style, Color, AnsiColor};
 use sysinfo::System;
-use util::verbose;
-
+use hyperpolyglot::get_language_breakdown;
 mod structs;
 mod util;
 
@@ -103,6 +102,7 @@ fn main() {
                 println!("{}", "Not a configuration file.".to_string().red());
             process::exit(2);
         }
+
         util::verbose(matches.clone(), format!("{}", format!("Using configuration file: {}", config[0].purple()).blue()));
     }
     else {
@@ -135,7 +135,24 @@ fn main() {
     }    
 }
     
-    print!("{}", format!("\nConfiguration:\n\t+ Project name: {}", conf.name.to_string()).to_string().magenta());
+    if !matches.get_flag("debug") {
+        print!("{}", format!("\nConfiguration:\n\t+ Project name: {}", conf.name.to_string()).to_string().magenta());
+    }
 
-    verbose(matches.clone(), "Scanning current directory...".to_string());  
+    util::verbose(matches.clone(), "Scanning current directory...".to_string());  
+
+    let breakdown = get_language_breakdown("src/");
+    let language: Vec<&str> = breakdown.iter().map(|(language, _)| *language).collect();
+    let total_detections = breakdown.iter().fold(0, |sum, (_language, detections)| sum + detections.len());
+    
+    let mut total_files = 0;
+    for (_language, detections) in &breakdown {
+        total_files += detections.len();
+    }
+    
+    let percentage = breakdown.iter().map(|(language, detections)| {
+        format!("{}: {} ({})", language, detections.len().to_string().magenta(), ((detections.len() as f64 / total_files as f64) * 100.0).round().to_string().magenta())
+    }).collect::<Vec<_>>().join(", ");
+    
+    println!("{}", format!("Total detections: {}, Languages: {}, percentage: {}", total_detections.to_string().magenta(), language.join(", ").magenta(), percentage.magenta()).to_string().blue());
 }
