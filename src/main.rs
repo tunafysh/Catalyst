@@ -71,7 +71,7 @@ fn main() {
     if matches.get_flag("verbose") {
         let sys = System::new_all();
         if matches.get_flag("debug") {
-            println!("{}", format!("Catalyst. version {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB, {}", CATALYST_VERSION.purple(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple(), "Debug mode".on_yellow().black().bold()).blue());
+            println!("{}", format!("Catalyst. version {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB, {}", CATALYST_VERSION.purple(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple(), "Debug mode".yellow().bold()).blue());
         }
         else {
             println!("{}", format!("Catalyst. version {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB", CATALYST_VERSION.purple(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple()).blue());
@@ -79,7 +79,7 @@ fn main() {
     }
     else {
         if matches.get_flag("debug") {
-            println!("{}", format!("Catalyst, version {}, Platform: {}, {}", CATALYST_VERSION.purple(), System::name().unwrap().purple(), "Debug mode".on_yellow().black().bold()).blue());
+            println!("{}", format!("Catalyst, version {}, Platform: {}, {}", CATALYST_VERSION.purple(), System::name().unwrap().purple(), "Debug mode".yellow().bold()).blue());
         }
         else{
             println!("{}", format!("Catalyst, version {}, Platform: {}", CATALYST_VERSION.purple(), System::name().unwrap().purple()).blue());
@@ -140,15 +140,19 @@ fn main() {
         print!("{}", format!("\nConfiguration:\n\t+ Project name: {}", conf.name.to_string()).to_string().magenta());
     }
 
+    let mut languages: Vec<String> = Vec::new();
+
     util::verbose(matches.clone(), "Scanning current directory...".to_string());  
 
-    let breakdown = get_language_breakdown("src/");
+    let breakdown = get_language_breakdown("./");
     let mut total_files = 0;
     for (_language, detections) in &breakdown {
         total_files += detections.len();
     }
+
     let percentage = breakdown.iter().map(|(language, detections)| {
-        format!("{}: {}", language, ((detections.len() as f64 / total_files as f64) * 100.0).round().to_string())
+        languages.push(language.to_string());
+        format!("{}: {}%", language, ((detections.len() as f64 / total_files as f64) * 100.0).round().to_string())
     }).collect::<Vec<_>>().join(", ");
     
     println!("{}", format!("Languages used:").to_string().blue());
