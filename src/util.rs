@@ -1,4 +1,6 @@
 use std::{fs, io::{self, Write}, path::Path};
+use hex_rgb::convert_hexcode_to_rgb;
+use hyperpolyglot::{get_language_breakdown, Language};
 use serde_json::to_string;
 use walkdir::WalkDir;
 use clap::ArgMatches;
@@ -121,34 +123,46 @@ pub fn generate() -> bool {
     true
 }
 
-// pub enum Languages {
-//     C,
-//     Cpp,
-//     CSharp,
-//     Go,
-//     Haskell,
-//     Java,
-//     Kotlin,
-//     Python,
-//     Ruby,
-//     Rust,
-//     Swift,
-//     Assembly,
-// }
+pub fn get_compiler(lang:&str) -> Vec<&str> {
+    match lang {
+        "C" | "Cpp" => vec!["gcc", "clang"],
+        "CSharp" => vec!["dotnet", "mcs"],
+        "Go" => vec!["go"],
+        "Haskell" => vec!["ghc"],
+        "Java" => vec!["javac"],
+        "Kotlin" => vec!["kotlinc"],
+        "Python" => vec!["python"],
+        "Ruby"  => vec!["ruby"],
+        "Rust"  => vec!["rustc"],
+        "Swift" => vec!["swiftc"],
+        "Assembly" => vec!["nasm"],
+        &_ => vec!["Unknown compiler, please specify it in config.cly"],
+    }
+}
 
-// pub fn get_compiler(lang:&str) -> Vec<&str> {
-//     match lang {
-//         "C" | "Cpp" => vec!["gcc", "clang"],
-//         "CSharp" => vec!["dotnet", "mcs"],
-//         "Go" => vec!["go"],
-//         "Haskell" => vec!["ghc"],
-//         "Java" => vec!["javac"],
-//         "Kotlin" => vec!["kotlinc"],
-//         "Python" => vec!["python"],
-//         "Ruby"  => vec!["ruby"],
-//         "Rust"  => vec!["rustc"],
-//         "Swift" => vec!["swiftc"],
-//         "Assembly" => vec!["nasm"],
-//         &_ => vec!["Unknown compiler"],
-//     }
-// }
+pub fn compile_all(matches: ArgMatches) {
+    
+    let mut languages: Vec<String> = Vec::new();
+
+    verbose(matches.clone(), "Scanning current directory...".to_string());  
+
+    let breakdown = get_language_breakdown("./");
+    let mut total_files = 0;
+    for (_language, detections) in &breakdown {
+        total_files += detections.len();
+    }
+
+    let percentage = breakdown.iter().map(|(language, detections)| {
+        languages.push(language.to_string());
+        format!("{}: {}%", language, ((detections.len() as f64 / total_files as f64) * 100.0).round().to_string())
+    }).collect::<Vec<_>>().join(", ");
+    
+    println!("{}", format!("Languages used:").to_string().blue());
+        for lang in percentage.split(", ") {
+            let language_struct = Language::try_from(lang.split(":").next().unwrap()).unwrap();
+            let hex_color = language_struct.color.unwrap();
+            let color = convert_hexcode_to_rgb(hex_color.to_string()).unwrap();
+            print!("{}\n", format!("{}", lang.to_string()).to_string().truecolor(color.red, color.green, color.blue));
+        }
+    
+}

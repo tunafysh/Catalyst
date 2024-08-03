@@ -2,11 +2,12 @@ use std::{fs, process};
 use colored::Colorize;
 use clap::{arg, builder::Styles, command, value_parser, ArgAction, ArgMatches, Command};
 use anstyle::{Style, Color, AnsiColor};
-use hex_rgb::convert_hexcode_to_rgb;
 use sysinfo::System;
-use hyperpolyglot::{get_language_breakdown, Language};
+
 mod structs;
 mod util;
+mod log;
+mod lua;
 
 const CATALYST_VERSION: &str = "0.1";
 
@@ -108,7 +109,7 @@ fn main() {
     }
     else {
         util::verbose(matches.clone(), "Scanning for config files...".to_string());
-        if let Some(path) = util::find_file("./", vec!["config.cly"]) {
+        if let Some(path) = util::find_file(".catalyst/", vec!["config.cly"]) {
             util::verbose(matches.clone(), format!("Found config file: {}", path.display().to_string().purple()));
             let config = path.display().to_string();
             util::verbose(matches.clone(), "Parsing...".to_string());
@@ -139,27 +140,17 @@ fn main() {
     if !matches.get_flag("debug") {
         print!("{}", format!("\nConfiguration:\n\t+ Project name: {}", conf.name.to_string()).to_string().magenta());
     }
-
-    let mut languages: Vec<String> = Vec::new();
-
-    util::verbose(matches.clone(), "Scanning current directory...".to_string());  
-
-    let breakdown = get_language_breakdown("./");
-    let mut total_files = 0;
-    for (_language, detections) in &breakdown {
-        total_files += detections.len();
-    }
-
-    let percentage = breakdown.iter().map(|(language, detections)| {
-        languages.push(language.to_string());
-        format!("{}: {}%", language, ((detections.len() as f64 / total_files as f64) * 100.0).round().to_string())
-    }).collect::<Vec<_>>().join(", ");
     
-    println!("{}", format!("Languages used:").to_string().blue());
-        for lang in percentage.split(", ") {
-            let language_struct = Language::try_from(lang.split(":").next().unwrap()).unwrap();
-            let hex_color = language_struct.color.unwrap();
-            let color = convert_hexcode_to_rgb(hex_color.to_string()).unwrap();
-            print!("{}\n", format!("{}", lang.to_string()).to_string().truecolor(color.red, color.green, color.blue));
+    if conf.hooks.len() > 0 {
+        util::verbose(matches.clone(), "Running hooks...".to_string());
+        for hook in conf.hooks {
+            let hook = hook.trim();
+            println!("{}", format!("Running hook: {}", hook).to_string().cyan());
+            let _ = lua::run_script(hook.to_string());
         }
+    }
+    else { 
+        util::verbose(matches.clone(), "No hooks found. Compiling all files in current project".to_string());
+        util::compile_all(matches.clone());
+    }
 }
