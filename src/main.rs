@@ -2,8 +2,9 @@ use std::{fs, process};
 use colored::Colorize;
 use clap::{arg, builder::Styles, command, value_parser, ArgAction, ArgMatches, Command};
 use anstyle::{Style, Color, AnsiColor};
+use hex_rgb::convert_hexcode_to_rgb;
 use sysinfo::System;
-use hyperpolyglot::get_language_breakdown;
+use hyperpolyglot::{get_language_breakdown, Language};
 mod structs;
 mod util;
 
@@ -142,17 +143,19 @@ fn main() {
     util::verbose(matches.clone(), "Scanning current directory...".to_string());  
 
     let breakdown = get_language_breakdown("src/");
-    let language: Vec<&str> = breakdown.iter().map(|(language, _)| *language).collect();
-    let total_detections = breakdown.iter().fold(0, |sum, (_language, detections)| sum + detections.len());
-    
     let mut total_files = 0;
     for (_language, detections) in &breakdown {
         total_files += detections.len();
     }
-    
     let percentage = breakdown.iter().map(|(language, detections)| {
-        format!("{}: {} ({})", language, detections.len().to_string().magenta(), ((detections.len() as f64 / total_files as f64) * 100.0).round().to_string().magenta())
+        format!("{}: {}", language, ((detections.len() as f64 / total_files as f64) * 100.0).round().to_string())
     }).collect::<Vec<_>>().join(", ");
     
-    println!("{}", format!("Total detections: {}, Languages: {}, percentage: {}", total_detections.to_string().magenta(), language.join(", ").magenta(), percentage.magenta()).to_string().blue());
+    println!("{}", format!("Languages used:").to_string().blue());
+        for lang in percentage.split(", ") {
+            let language_struct = Language::try_from(lang.split(":").next().unwrap()).unwrap();
+            let hex_color = language_struct.color.unwrap();
+            let color = convert_hexcode_to_rgb(hex_color.to_string()).unwrap();
+            print!("{}\n", format!("{}", lang.to_string()).to_string().truecolor(color.red, color.green, color.blue));
+        }
 }

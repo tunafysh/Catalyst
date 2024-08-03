@@ -7,7 +7,8 @@ edition = "2021"
 anstyle = "1.0.8"
 clap = { version = "4.5.10", features = ["derive", "cargo"] }
 colored = "2.1.0"
-git2 = "0.19.0"
+hex-rgb = "0.1.1"
+# git2 = "0.19.0"
 hyperpolyglot = "0.1.7"
 mlua = { version = "0.9.9", features = ["luau", "luau-jit", "async", "macros", "serialize"] }
 phf = { version = "0.11.2", features = ["macros"] }
