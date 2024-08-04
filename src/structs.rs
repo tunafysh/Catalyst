@@ -4,7 +4,6 @@ use serde::{ Serialize, Deserialize };
 pub struct Config {
     pub name: String,
     pub version: Option<String>,
-    pub platform: String,
     pub working_directory: Option<String>,
     pub hooks: Vec<String>,
     pub compiler: Option<String>,

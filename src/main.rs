@@ -60,7 +60,6 @@ fn main() {
     let mut conf: structs::Config = structs::Config {
         name: String::new(),
         version: None,
-        platform: String::new(),
         working_directory: None,
         hooks: Vec::new(),
         compiler: None,
@@ -141,12 +140,14 @@ fn main() {
         print!("{}", format!("\nConfiguration:\n\t+ Project name: {}", conf.name.to_string()).to_string().magenta());
     }
     
+    println!("{}", conf.hooks.len());
+
     if conf.hooks.len() > 0 {
         util::verbose(matches.clone(), "Running hooks...".to_string());
         for hook in conf.hooks {
-            let hook = hook.trim();
+            let hookfile = fs::read_to_string(format!(".catalyst/{}.cly", hook)).unwrap();
             println!("{}", format!("Running hook: {}", hook).to_string().cyan());
-            let _ = lua::run_script(hook.to_string());
+            let _ = lua::run_script(hookfile);
         }
     }
     else { 

@@ -1,5 +1,5 @@
 use std::{fs, io::{self, Write}, path::Path};
-use hex_rgb::convert_hexcode_to_rgb;
+use hex_rgb::{convert_hexcode_to_rgb, Color};
 use hyperpolyglot::{get_language_breakdown, Language};
 use serde_json::to_string;
 use walkdir::WalkDir;
@@ -49,7 +49,6 @@ pub fn generate() -> bool {
     let mut config: structs::Config = structs::Config {
         name: String::new(),
         version: None,
-        platform: String::new(),
         working_directory: None,
         hooks: Vec::new(),
         compiler: None,
@@ -73,14 +72,6 @@ pub fn generate() -> bool {
     }
     else {
         config.version = None;
-    }
-    
-    let _input = prompt("Enter platform: ".to_string());
-    if let Some(input) = _input {
-        config.platform = input;
-    }
-    else{
-        config.platform = String::new();
     }
 
     let _input = prompt("Enter working directory (can be left blank): ".to_string());
@@ -160,9 +151,17 @@ pub fn compile_all(matches: ArgMatches) {
     println!("{}", format!("Languages used:").to_string().blue());
         for lang in percentage.split(", ") {
             let language_struct = Language::try_from(lang.split(":").next().unwrap()).unwrap();
-            let hex_color = language_struct.color.unwrap();
-            let color = convert_hexcode_to_rgb(hex_color.to_string()).unwrap();
-            print!("{}\n", format!("{}", lang.to_string()).to_string().truecolor(color.red, color.green, color.blue));
+            let hex_color = language_struct.color;
+            match hex_color {
+                Some(hex_color) => {
+                    let color: Color = convert_hexcode_to_rgb(hex_color.to_string()).unwrap();
+                    print!("{}\n", format!("{}", lang.to_string()).to_string().truecolor(color.red, color.green, color.blue));
+                }
+                None => {
+                    print!("{}\n", format!("{}", lang.to_string()).to_string().truecolor(255, 255, 255));
+                }
+            }
+            
         }
     
 }
