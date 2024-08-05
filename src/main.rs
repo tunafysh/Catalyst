@@ -2,11 +2,12 @@ use std::{fs, process};
 use colored::Colorize;
 use clap::{arg, builder::Styles, command, value_parser, ArgAction, ArgMatches, Command};
 use anstyle::{Style, Color, AnsiColor};
-use sysinfo::System;
+use log::info;
+use sysinfo::System;    
 
 mod structs;
 mod util;
-mod log;
+mod logger;
 mod lua;
 
 const CATALYST_VERSION: &str = "0.1";
@@ -56,18 +57,16 @@ fn args() -> ArgMatches {
 }
 
 fn main() {
-    
-    let mut conf: structs::Config = structs::Config {
-        name: String::new(),
-        version: None,
-        working_directory: None,
-        hooks: Vec::new(),
-        compiler: None,
-        flags: vec!["".to_string()],
-    };
-
     let matches = args();
-    
+
+    match logger::setup_logger(matches.clone()) {
+        Ok(_) => {}
+        Err(err) => {
+            println!("{}", format!("Failed to setup logger. Error: {}", err).to_string().red());
+            process::exit(1);
+        },
+    }
+
     if matches.get_flag("verbose") {
         let sys = System::new_all();
         if matches.get_flag("debug") {
@@ -94,6 +93,15 @@ fn main() {
         }
         _ => {}
     }
+
+    let mut conf: structs::Config = structs::Config {
+        name: String::new(),
+        version: None,
+        working_directory: None,
+        hooks: Vec::new(),
+        compiler: None,
+        flags: vec!["".to_string()],
+    };
 
     let config = matches.get_many::<String>("config").unwrap_or_default().into_iter().map(|v| v.as_str()).collect::<Vec<_>>();
     if matches.get_flag("debug") == false {
@@ -139,12 +147,11 @@ fn main() {
     if !matches.get_flag("debug") {
         print!("{}", format!("\nConfiguration:\n\t+ Project name: {}", conf.name.to_string()).to_string().magenta());
     }
-    
-    println!("{}", conf.hooks.len());
 
     if conf.hooks.len() > 0 {
         util::verbose(matches.clone(), "Running hooks...".to_string());
         for hook in conf.hooks {
+            info!("{}", format!(".catalyst/{}.cly", hook));
             let hookfile = fs::read_to_string(format!(".catalyst/{}.cly", hook)).unwrap();
             println!("{}", format!("Running hook: {}", hook).to_string().cyan());
             let _ = lua::run_script(hookfile);
