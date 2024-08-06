@@ -27,14 +27,15 @@ pub fn setup_logger(matches: ArgMatches) -> Result<(), fern::InitError> {
             println!("Failed to create logs file");
         }
     }
+    let mut loglevel: LevelFilter;
     if matches.get_flag("debug") {
-        log::set_max_level(LevelFilter::Debug);
+        loglevel = LevelFilter::Debug;
     }
     else if matches.get_flag("verbose") {
-        log::set_max_level(LevelFilter::Off);
+        loglevel = LevelFilter::Info;
     }
     else {
-        log::set_max_level(LevelFilter::Off);
+        loglevel = LevelFilter::Off;
     }
 
     fern::Dispatch::new()
@@ -47,7 +48,7 @@ pub fn setup_logger(matches: ArgMatches) -> Result<(), fern::InitError> {
                 message
             ))
         })
-        .level(LevelFilter::Debug)
+        .level(loglevel)
         .chain(std::io::stdout())
         .chain(fern::log_file(".catalyst/logs/output.log")?)
         .apply()?;

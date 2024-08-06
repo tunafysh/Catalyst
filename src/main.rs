@@ -151,8 +151,10 @@ fn main() {
     if conf.hooks.len() > 0 {
         util::verbose(matches.clone(), "Running hooks...".to_string());
         for hook in conf.hooks {
+            info!("{}", format!(".catalyst/{}.cly", hook));
+            let hookfile = fs::read_to_string(format!(".catalyst/{}.cly", hook)).unwrap();
             println!("{}", format!("Running hook: {}", hook).to_string().cyan());
-            let _ = lua::run_script(format!(".catalyst/{}.cly", hook));
+            let _ = lua::run_script(hookfile);
         }
     }
     else { 
