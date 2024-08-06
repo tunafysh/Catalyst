@@ -48,9 +48,11 @@ pub fn setup_logger(matches: ArgMatches) -> Result<(), fern::InitError> {
                 message
             ))
         })
+        .level_for("globset", LevelFilter::Off)
+        .level_for("fern", LevelFilter::Trace)
+        .chain(fern::log_file(".catalyst/logs/output.log")?)
         .level(loglevel)
         .chain(std::io::stdout())
-        .chain(fern::log_file(".catalyst/logs/output.log")?)
         .apply()?;
     Ok(())
 }

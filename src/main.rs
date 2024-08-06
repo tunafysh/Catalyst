@@ -148,7 +148,7 @@ fn main() {
         println!("{}", format!("Configuration:\n\t+ Project name: {}", conf.name.to_string()).to_string().magenta());
     }
 
-    if conf.hooks.len() > 0 && conf.hooks.contains(&"compile_all".to_string()) {
+    if conf.hooks.len() > 0 {
         info!("Running hooks...");
         for hook in conf.hooks {
             info!("{}", format!(".catalyst/{}.cly", hook));
@@ -158,7 +158,7 @@ fn main() {
         }
     }
     else { 
-        info!("No hooks found. Compiling all files in current project");
+        info!("No hooks found or specified \"compile_all\"hook. Compiling all files in current project");
         util::compile_all();
     }
 }
