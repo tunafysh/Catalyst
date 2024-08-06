@@ -2,7 +2,7 @@ use std::{fs, process};
 use colored::Colorize;
 use clap::{arg, builder::Styles, command, value_parser, ArgAction, ArgMatches, Command};
 use anstyle::{Style, Color, AnsiColor};
-use log::info;
+use log::{error, info};
 use sysinfo::System;    
 
 mod structs;
@@ -10,7 +10,7 @@ mod util;
 mod logger;
 mod lua;
 
-const CATALYST_VERSION: &str = "0.1";
+const CATALYST_VERSION: &str = "0.54";
 
 fn args() -> ArgMatches {
     let styles = Styles::styled()
@@ -87,7 +87,7 @@ fn main() {
     
     match matches.subcommand() {
         Some(("init", _)) => {
-            util::verbose(matches.clone(), "Initializing configuration...".to_string());
+            info!("Initializing configuration...");
             let gensuccess = util::generate();
             process::exit(gensuccess as i32);
         }
@@ -112,17 +112,17 @@ fn main() {
             process::exit(2);
         }
 
-        util::verbose(matches.clone(), format!("{}", format!("Using configuration file: {}", config[0].purple()).blue()));
+        info!("{}", format!("Using configuration file: {}", config[0].purple()).blue());
     }
     else {
-        util::verbose(matches.clone(), "Scanning for config files...".to_string());
+        info!("Scanning for config files...");
         if let Some(path) = util::find_file(".catalyst/", vec!["config.cly.json"]) {
-            util::verbose(matches.clone(), format!("Found config file: {}", path.display().to_string().purple()));
+            info!("Found config file: {}", path.display().to_string().purple());
             let config = path.display().to_string();
-            util::verbose(matches.clone(), "Parsing...".to_string());
+            info!("Parsing...");
             let configfile = match fs::read_to_string(config) {
                 Err(_e) => {
-                    println!("{}", "Cannot read configuration file.".to_string().red());
+                    error!("{}", "Cannot read configuration file.".to_string().red());
                     process::exit(3);
                 }
                 Ok(cf) => cf
@@ -130,14 +130,14 @@ fn main() {
             
             conf = match serde_json::from_str(configfile.as_str()) {
                 Err(_e) => {
-                    println!("{}", "Inavlid configuration file.".to_string().red());
+                    error!("{}", "Inavlid configuration file.".to_string().red());
                     process::exit(4);
                 }
                 Ok(c) => c
             } 
         }
         else {
-            print!("{}", "No config file found.".to_string().red());
+            error!("{}", "No config file found.".to_string().red());
             process::exit(1);
         }
         
@@ -148,8 +148,8 @@ fn main() {
         println!("{}", format!("Configuration:\n\t+ Project name: {}", conf.name.to_string()).to_string().magenta());
     }
 
-    if conf.hooks.len() > 0 {
-        util::verbose(matches.clone(), "Running hooks...".to_string());
+    if conf.hooks.len() > 0 && conf.hooks.contains(&"compile_all".to_string()) {
+        info!("Running hooks...");
         for hook in conf.hooks {
             info!("{}", format!(".catalyst/{}.cly", hook));
             let hookfile = fs::read_to_string(format!(".catalyst/{}.cly", hook)).unwrap();
@@ -158,7 +158,7 @@ fn main() {
         }
     }
     else { 
-        util::verbose(matches.clone(), "No hooks found. Compiling all files in current project".to_string());
-        util::compile_all(matches.clone());
+        info!("No hooks found. Compiling all files in current project");
+        util::compile_all();
     }
 }

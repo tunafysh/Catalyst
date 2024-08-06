@@ -1,9 +1,9 @@
 use std::{fs, io::{self, Write}, path::Path};
 use hex_rgb::{convert_hexcode_to_rgb, Color};
 use hyperpolyglot::{get_language_breakdown, Language};
-use serde_json::to_string;
+use log::info;
+use serde_json::to_string_pretty;
 use walkdir::WalkDir;
-use clap::ArgMatches;
 use colored::Colorize;
 
 use crate::structs;
@@ -33,12 +33,6 @@ pub fn find_file<P: AsRef<Path>>(dir: P, file_name: Vec<&str>) -> Option<std::pa
     }
 
     None
-}
-
-pub fn verbose(matches: ArgMatches, msg: String) {
-    if matches.get_flag("verbose") {
-        println!("{}", msg.cyan());
-    }
 }
 
 pub fn generate() -> bool {
@@ -107,7 +101,7 @@ pub fn generate() -> bool {
     }
     config.name = config.name.trim().to_string();
 
-    let config_json = to_string(&config).unwrap();
+    let config_json = to_string_pretty(&config).unwrap();
     fs::DirBuilder::new().create(".catalyst").unwrap();
     let _ = fs::write(".catalyst/config.cly.json", config_json);
 
@@ -131,11 +125,11 @@ pub fn get_compiler(lang:&str) -> Vec<&str> {
     }
 }
 
-pub fn compile_all(matches: ArgMatches) {
+pub fn compile_all() {
     
     let mut languages: Vec<String> = Vec::new();
 
-    verbose(matches.clone(), "Scanning current directory...".to_string());  
+    info!("Scanning current directory...");  
 
     let breakdown = get_language_breakdown("./");
     let mut total_files = 0;

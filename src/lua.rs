@@ -8,7 +8,7 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
     match script_content {
         Err(err) => {
             error!("Failed to read script: {}", err);
-        process::exit(1);
+            process::exit(1);
         }
 
         Ok(chunk) => {

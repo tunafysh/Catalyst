@@ -27,7 +27,7 @@ pub fn setup_logger(matches: ArgMatches) -> Result<(), fern::InitError> {
             println!("Failed to create logs file");
         }
     }
-    let mut loglevel: LevelFilter;
+    let loglevel: LevelFilter;
     if matches.get_flag("debug") {
         loglevel = LevelFilter::Debug;
     }
@@ -35,7 +35,7 @@ pub fn setup_logger(matches: ArgMatches) -> Result<(), fern::InitError> {
         loglevel = LevelFilter::Info;
     }
     else {
-        loglevel = LevelFilter::Off;
+        loglevel = LevelFilter::Warn;
     }
 
     fern::Dispatch::new()
