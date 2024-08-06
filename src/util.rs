@@ -109,7 +109,7 @@ pub fn generate() -> bool {
 
     let config_json = to_string(&config).unwrap();
     fs::DirBuilder::new().create(".catalyst").unwrap();
-    let _ = fs::write(".catalyst/config.cly", config_json);
+    let _ = fs::write(".catalyst/config.cly.json", config_json);
 
     true
 }

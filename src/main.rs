@@ -27,7 +27,7 @@ fn args() -> ArgMatches {
         .version(CATALYST_VERSION)
         .arg(
             arg!(
-                -c --config <FILE> "Configuration file to use, default: ./config.cly"
+                -c --config <FILE> "Configuration file to use, default: .catalyst/config.cly.json"
             )
             // We don't have syntax yet for optional options, so manually calling `required`
             .required(false)
@@ -107,7 +107,7 @@ fn main() {
     if matches.get_flag("debug") == false {
 
         if config.len() != 0 {
-            if !config[0].contains(".cly") {
+            if !config[0].contains(".cly.json") {
                 println!("{}", "Not a configuration file.".to_string().red());
             process::exit(2);
         }
@@ -116,7 +116,7 @@ fn main() {
     }
     else {
         util::verbose(matches.clone(), "Scanning for config files...".to_string());
-        if let Some(path) = util::find_file(".catalyst/", vec!["config.cly"]) {
+        if let Some(path) = util::find_file(".catalyst/", vec!["config.cly.json"]) {
             util::verbose(matches.clone(), format!("Found config file: {}", path.display().to_string().purple()));
             let config = path.display().to_string();
             util::verbose(matches.clone(), "Parsing...".to_string());
@@ -145,16 +145,14 @@ fn main() {
 }
     
     if !matches.get_flag("debug") {
-        print!("{}", format!("\nConfiguration:\n\t+ Project name: {}", conf.name.to_string()).to_string().magenta());
+        println!("{}", format!("Configuration:\n\t+ Project name: {}", conf.name.to_string()).to_string().magenta());
     }
 
     if conf.hooks.len() > 0 {
         util::verbose(matches.clone(), "Running hooks...".to_string());
         for hook in conf.hooks {
-            info!("{}", format!(".catalyst/{}.cly", hook));
-            let hookfile = fs::read_to_string(format!(".catalyst/{}.cly", hook)).unwrap();
             println!("{}", format!("Running hook: {}", hook).to_string().cyan());
-            let _ = lua::run_script(hookfile);
+            let _ = lua::run_script(format!(".catalyst/{}.cly", hook));
         }
     }
     else { 
