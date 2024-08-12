@@ -21,3 +21,7 @@ log4rs = "1.3.0"
 log = "0.4.22"
 fern = { version = "0.6.2", features = ["colored"] }
 humantime = "2.1.0"
+
+[[bin]]
+name = "clyst"
+path = "src/main.rs"
