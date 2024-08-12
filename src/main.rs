@@ -1,4 +1,4 @@
-use std::{fs, process};
+use std::{env::consts, fs, path::Path, process};
 use colored::Colorize;
 use clap::{arg, builder::Styles, command, value_parser, ArgAction, ArgMatches, Command};
 use anstyle::{Style, Color, AnsiColor};
@@ -36,6 +36,13 @@ fn args() -> ArgMatches {
         )
         .arg(
             arg!(
+                -n --nologs "Disables logging"
+            )
+            .action(ArgAction::SetTrue)
+            .required(false)
+        )
+        .arg(
+            arg!(
                 -d --debug ... "Turn debug information on"
             )
             .action(ArgAction::SetTrue)
@@ -50,6 +57,9 @@ fn args() -> ArgMatches {
     .subcommand(
         Command::new("init").about("Initializes a new configuration file")
     )
+    .subcommand(
+        Command::new("cleanup").about("Cleans up the logs.")
+    )
 
     .get_matches();
 
@@ -58,13 +68,15 @@ fn args() -> ArgMatches {
 
 fn main() {
     let matches = args();
-
-    match logger::setup_logger(matches.clone()) {
-        Ok(_) => {}
-        Err(err) => {
-            println!("{}", format!("Failed to setup logger. Error: {}", err).to_string().red());
-            process::exit(1);
-        },
+    if matches.get_flag("nologs") {
+        
+        match logger::setup_logger(matches.clone()) {
+            Ok(_) => {}
+            Err(err) => {
+                println!("{}", format!("Failed to setup logger. Error: {}", err).to_string().red());
+                process::exit(1);
+            },
+        }
     }
 
     if matches.get_flag("verbose") {
@@ -94,6 +106,30 @@ fn main() {
         _ => {}
     }
 
+    match matches.subcommand() {
+        Some(("cleanup", _)) => {
+            let logdir =if consts::OS == "windows" {Path::new("C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\Catalyst")} else {Path::new("~/.catalyst/cache")};    
+            if !Path::exists(logdir) {
+                match fs::create_dir(logdir){
+                    Ok(_) => {}
+                    Err(_) => {
+                        error!("Failed to create logs directory");
+                    }
+                }
+            }
+            else {
+                match fs::remove_dir_all(logdir) {
+                    Ok(_) => {}
+                    Err(_) => {
+                        error!("Failed to remove logs directory");
+                    }
+                }
+            }
+
+        }
+        _ => {}
+    }
+
     let mut conf: structs::Config = structs::Config {
         name: String::new(),
         version: None,
@@ -116,7 +152,7 @@ fn main() {
     }
     else {
         info!("Scanning for config files...");
-        if let Some(path) = util::find_file(".catalyst/", vec!["config.cly.json"]) {
+        if let Some(path) = util::find_file("src/.catalyst/", vec!["config.cly.json"]) {
             info!("Found config file: {}", path.display().to_string().purple());
             let config = path.display().to_string();
             info!("Parsing...");
@@ -148,17 +184,16 @@ fn main() {
         println!("{}", format!("Configuration:\n\t+ Project name: {}", conf.name.to_string()).to_string().magenta());
     }
 
-    if conf.hooks.len() > 0 {
+    if conf.hooks.len() != 0 {
         info!("Running hooks...");
         for hook in conf.hooks {
-            info!("{}", format!(".catalyst/{}.cly", hook));
-            let hookfile = fs::read_to_string(format!(".catalyst/{}.cly", hook)).unwrap();
+            info!("{}", format!("src/.catalyst/{}.cly", hook));
             println!("{}", format!("Running hook: {}", hook).to_string().cyan());
-            let _ = lua::run_script(hookfile);
+            let _ = lua::run_script(format!("src/.catalyst/{}.cly", hook));
         }
     }
     else { 
-        info!("No hooks found or specified \"compile_all\"hook. Compiling all files in current project");
+        info!("No hooks found. Compiling all files in current project");
         util::compile_all();
     }
 }

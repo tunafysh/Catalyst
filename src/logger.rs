@@ -1,32 +1,27 @@
 use clap::ArgMatches;
 use log::LevelFilter;
-use std::{fs, path::Path, time::SystemTime};
+use std::{env::consts, fs, path::Path, time::SystemTime};
 
 pub fn setup_logger(matches: ArgMatches) -> Result<(), fern::InitError> {
-    if Path::exists(Path::new(".catalyst/logs")) {
-        match fs::remove_dir_all(".catalyst/logs")
-        {
-            Ok(_) => {}
-            Err(_) => {
-                println!("Failed to remove logs directory");
-            }
-        }
-    }
-
-        match fs::create_dir(".catalyst/logs"){
+    if !matches.get_flag("nologs") {
+    let logdir =if consts::OS == "windows" {Path::new("C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\Catalyst")} else {Path::new("~/.catalyst/cache")};    
+    if !Path::exists(logdir) {
+        match fs::create_dir_all(logdir){
             Ok(_) => {}
             Err(_) => {
                 println!("Failed to create logs directory");
             }
         }
+    }
+
     
-    
-    match fs::File::create(".catalyst/logs/output.log"){
+    let logfile = format!("{}/{}.log", logdir.display(), humantime::format_rfc3339_seconds(SystemTime::now()));
+    match fs::File::create(logfile.clone()){
         Ok(_) => {}
         Err(_) => {
             println!("Failed to create logs file");
         }
-    }
+    };
     let loglevel: LevelFilter;
     if matches.get_flag("debug") {
         loglevel = LevelFilter::Debug;
@@ -37,9 +32,9 @@ pub fn setup_logger(matches: ArgMatches) -> Result<(), fern::InitError> {
     else {
         loglevel = LevelFilter::Warn;
     }
-
+    
     fern::Dispatch::new()
-        .format(|out, message, record| {
+    .format(|out, message, record| {
             out.finish(format_args!(
                 "[{} {} {}] {}",
                 humantime::format_rfc3339_seconds(SystemTime::now()),
@@ -50,9 +45,13 @@ pub fn setup_logger(matches: ArgMatches) -> Result<(), fern::InitError> {
         })
         .level_for("globset", LevelFilter::Off)
         .level_for("fern", LevelFilter::Trace)
-        .chain(fern::log_file(".catalyst/logs/output.log")?)
+        .chain(fern::log_file(logfile.clone())?)
         .level(loglevel)
         .chain(std::io::stdout())
         .apply()?;
     Ok(())
+    }
+    else {
+        Ok(())
+    }
 }
