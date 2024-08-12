@@ -1,6 +1,6 @@
-use std::{fs, process};
+use std::{fs, process::{self, Command}};
 use mlua::prelude::*;
-use git2::{Repository, SubmoduleUpdate, Submodule};
+use git2::Repository;
 use log::{error, info, warn};
 
 use crate::util::{compile_all, find_file, prompt};
@@ -31,11 +31,12 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
 
     globals.set("findfile", lua.create_function(move |_, path: String| {
         let path = find_file("src/.catalyst/", vec![path.as_str()]);
-        if let Some(path) = path {
-            Ok(path.display().to_string())
-        }
-        else {
-            Ok("".to_string())
+        match path {
+            Ok(path) => Ok(path.display().to_string()),
+            Err(_) => {
+                error!("File not found.");
+                Err(mlua::Error::external("File not found"))
+            }
         }
     })?).unwrap();
 
@@ -60,7 +61,16 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
         Ok(())
     })?).unwrap();
 
-    globals.set("submoduleinit", lua.create_function(move |_, path: String| {
+    globals.set("shell", lua.create_function(move |_, (shell, command): (String, String)| {
+        Command::new(shell)
+        .arg("-c")
+        .arg(command)
+        .spawn()
+        .expect("failed to execute process");
+
+        Ok(())
+    })?).unwrap();
+    globals.set("submoduleinit", lua.create_function(move |_, _path: String| {
         warn!("under construction");
         Ok(())
     })?).unwrap();

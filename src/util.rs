@@ -1,4 +1,4 @@
-use std::{fs, io::{self, Write}, path::Path, process::Command};
+use std::{fs, io::{self, Error, Write}, path::Path, process::Command};
 use hex_rgb::{convert_hexcode_to_rgb, Color};
 use hyperpolyglot::{get_language_breakdown, Language};
 use log::{error, info};
@@ -21,18 +21,17 @@ pub fn prompt(msg: String) -> Option<String> {
     }
 }
 
-pub fn find_file<P: AsRef<Path>>(dir: P, file_name: Vec<&str>) -> Option<std::path::PathBuf> {
+pub fn find_file<P: AsRef<Path>>(dir: P, file_name: Vec<&str>) -> Result<std::path::PathBuf, Error> {
     for entry in WalkDir::new(dir) {
         if let Ok(entry) = entry {
             for file in file_name.clone() {
                 if entry.file_name().to_string_lossy().to_string().contains(file) {
-                    return Some(entry.path().to_path_buf())
+                    return Ok(entry.path().to_path_buf())
                 }
             }
         }
     }
-
-    None
+    Err(Error::new(io::ErrorKind::NotFound, "File not found"))
 }
 
 pub fn generate() -> bool {

@@ -152,17 +152,25 @@ fn main() {
     }
     else {
         info!("Scanning for config files...");
-        if let Some(path) = util::find_file("src/.catalyst/", vec!["config.cly.json"]) {
-            info!("Found config file: {}", path.display().to_string().purple());
-            let config = path.display().to_string();
-            info!("Parsing...");
-            let configfile = match fs::read_to_string(config) {
-                Err(_e) => {
-                    error!("{}", "Cannot read configuration file.".to_string().red());
-                    process::exit(3);
-                }
-                Ok(cf) => cf
+        let configfile; {
+        match util::find_file("src/.catalyst/", vec!["config.cly.json"]) {
+            Err(_e) => {
+                error!("{}", "No config file found.".to_string().red());
+                process::exit(1);
+            }
+            Ok(path) => {
+                info!("Found config file: {}", path.display().to_string().purple());
+                let config = path.display().to_string();
+                info!("Parsing...");
+                configfile = match fs::read_to_string(config) {
+                    Err(_e) => {
+                        error!("{}", "Cannot read configuration file.".to_string().red());
+                        process::exit(3);
+                    }
+                    Ok(cf) => cf
             };
+            }
+        }
             
             conf = match serde_json::from_str(configfile.as_str()) {
                 Err(_e) => {
@@ -172,12 +180,7 @@ fn main() {
                 Ok(c) => c
             } 
         }
-        else {
-            error!("{}", "No config file found.".to_string().red());
-            process::exit(1);
-        }
         
-    }    
 }
     
     if !matches.get_flag("debug") {
@@ -195,5 +198,6 @@ fn main() {
     else { 
         info!("No hooks found. Compiling all files in current project");
         util::compile_all();
+    }
     }
 }
