@@ -1,4 +1,4 @@
-use std::{fs, process::{self, Command}};
+use std::{fs, process::{self, Command}, env};
 use mlua::prelude::*;
 use git2::Repository;
 use log::{error, info, warn};
@@ -70,6 +70,60 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
 
         Ok(())
     })?).unwrap();
+
+    globals.set("getenv", lua.create_function(move |_, key: String| {
+        Ok(env::var(key).unwrap_or_default())
+    })?).unwrap();
+
+    globals.set("setenv", lua.create_function(move |_, (key, value): (String, String)| {
+        env::set_var(key, value);
+        Ok(())
+    })?).unwrap();
+
+    globals.set("getcwd", lua.create_function(move |_, _: ()| {
+        Ok(env::current_dir().unwrap().display().to_string())
+    })?).unwrap();
+
+    globals.set("exists", lua.create_function(move |_, path: String| {
+        Ok(fs::metadata(path).is_ok())
+    })?).unwrap();
+
+    globals.set("readfile", lua.create_function(move |_, path: String| {
+        let content = fs::read_to_string(path);
+        match content {
+            Ok(content) => Ok(content),
+            Err(err) => {
+                error!("Failed to read file: {}", err);
+                Err(mlua::Error::external("Failed to read file"))
+            }
+        }
+    })?).unwrap();
+
+    globals.set("writefile", lua.create_function(move |_, (path, content): (String, String)| {
+        let _ = fs::write(path, content);
+        Ok(())
+    })?).unwrap();
+
+    globals.set("readjson", lua.create_function(move |_, path: String| {
+        let content = fs::read_to_string(path);
+        match content {
+            Ok(content) => {
+                let json: serde_json::Value = serde_json::from_str(&content).unwrap();
+                Ok(json.to_string())
+            },
+            Err(err) => {
+                error!("Failed to read file: {}", err);
+                Err(mlua::Error::external("Failed to read file"))
+            }
+        }
+    })?).unwrap();
+
+    globals.set("writejson", lua.create_function(move |_, (path, content): (String, String)| {
+        let content = serde_json::to_string_pretty(&content).unwrap();
+        let _ = fs::write(path, content);
+        Ok(())
+    })?).unwrap();
+
     globals.set("submoduleinit", lua.create_function(move |_, _path: String| {
         warn!("under construction");
         Ok(())

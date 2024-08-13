@@ -10,7 +10,7 @@ mod util;
 mod logger;
 mod lua;
 
-const CATALYST_VERSION: &str = "0.54";
+const CATALYST_VERSION: &str = "0.6.3";
 
 fn args() -> ArgMatches {
     let styles = Styles::styled()
@@ -68,7 +68,7 @@ fn args() -> ArgMatches {
 
 fn main() {
     let matches = args();
-    if matches.get_flag("nologs") {
+    if !matches.get_flag("nologs") {
         
         match logger::setup_logger(matches.clone()) {
             Ok(_) => {}
@@ -109,23 +109,14 @@ fn main() {
     match matches.subcommand() {
         Some(("cleanup", _)) => {
             let logdir =if consts::OS == "windows" {Path::new("C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\Catalyst")} else {Path::new("~/.catalyst/cache")};    
-            if !Path::exists(logdir) {
-                match fs::create_dir(logdir){
-                    Ok(_) => {}
-                    Err(_) => {
-                        error!("Failed to create logs directory");
-                    }
-                }
-            }
-            else {
+            if Path::exists(logdir) {
                 match fs::remove_dir_all(logdir) {
                     Ok(_) => {}
                     Err(_) => {
                         error!("Failed to remove logs directory");
                     }
-                }
+                }  
             }
-
         }
         _ => {}
     }
