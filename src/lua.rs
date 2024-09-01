@@ -1,6 +1,6 @@
 use std::{fs, process::{self, Command}, env};
 use mlua::prelude::*;
-use git2::Repository;
+use git2::{Repository, SubmoduleUpdateOptions};
 use log::{error, info, warn};
 
 use crate::util::{compile_all, find_file, prompt};
@@ -124,9 +124,21 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
         Ok(())
     })?).unwrap();
 
-    globals.set("submoduleinit", lua.create_function(move |_, _path: String| {
-        warn!("under construction");
-        Ok(())
+    globals.set("submodulesinit", lua.create_function(move |_, _: ()| {
+        let repo = Repository::open("/path/to/your/repo").unwrap();
+
+    // Initialize and update submodules
+    while let Ok(submodule) = repo.submodules() {
+        for mut submod in submodule {
+            let _ = submod.init(true);
+
+        // Update the submodule
+            let mut options = SubmoduleUpdateOptions::new();
+            let _ = submod.update(true, Some(&mut options));
+        }
+    }
+
+    Ok(())
     })?).unwrap();
     let script_content = fs::read_to_string(path);
     match script_content {

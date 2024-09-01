@@ -1,12 +1,15 @@
-use std::{fs, io::{self, Error, Write}, path::Path, process::Command};
-use hex_rgb::{convert_hexcode_to_rgb, Color};
+use std::{fs, io::{self, Error, Write}, path::Path, process::Command as Cmd, vec};
+use anstyle::{Style, Color, AnsiColor};
+use clap::{arg, builder::Styles, command, value_parser, ArgAction, ArgMatches, Command};
+use hex_rgb::{convert_hexcode_to_rgb, Color as rgbcolor};
 use hyperpolyglot::{get_language_breakdown, Language};
 use log::{error, info};
 use serde_json::to_string_pretty;
+use sysinfo::System;
 use walkdir::WalkDir;
 use colored::Colorize;
 
-use crate::structs;
+use crate::{structs, updater, CATALYST_VERSION};
 
 pub fn prompt(msg: String) -> Option<String> {
     print!("{}", msg);
@@ -42,10 +45,8 @@ pub fn generate() -> bool {
     let mut config: structs::Config = structs::Config {
         name: String::new(),
         version: None,
-        working_directory: None,
-        hooks: Vec::new(),
-        compiler: None,
-        flags: Vec::new(),
+        working_directory: String::new(),
+        hooks: Vec::new()
     };
 
     let input = prompt("Enter project name: ".to_string());
@@ -69,35 +70,11 @@ pub fn generate() -> bool {
 
     let _input = prompt("Enter working directory (can be left blank): ".to_string());
     if let Some(input) = _input {
-        config.working_directory = Some(input);
-    }
-    else {
-        config.working_directory = None;
+        config.working_directory = input;
     }
 
-    let _input = prompt("Enter compiler (can be left blank): ".to_string());
-    if let Some(input) = _input {
-        config.compiler = Some(input);
-    }
-    else {
-        config.compiler = None;
-    }
+        config.hooks = vec!["main".to_string()];
 
-    let _input = prompt("Enter flags (can be left blank): ".to_string());
-    if let Some(input) = _input {
-        config.flags = input.split(" ").map(|s| s.to_string()).collect();
-    }
-    else {
-        config.flags = vec!["".to_string()];
-    }
-
-    let _input = prompt("Enter hooks (can be left blank): ".to_string());
-    if let Some(input) = _input {
-        config.hooks = input.split(" ").map(|s| s.to_string()).collect();
-    }
-    else {
-        config.hooks = Vec::new();
-    }
     config.name = config.name.trim().to_string();
 
     let config_json = to_string_pretty(&config).unwrap();
@@ -147,7 +124,7 @@ pub fn compile_all() {
             let hex_color = language_struct.color;
             match hex_color {
                 Some(hex_color) => {
-                    let color: Color = convert_hexcode_to_rgb(hex_color.to_string()).unwrap();
+                    let color: rgbcolor = convert_hexcode_to_rgb(hex_color.to_string()).unwrap();
                     print!("{}\n", format!("{}", lang.to_string()).to_string().truecolor(color.red, color.green, color.blue));
                 }
                 None => {
@@ -168,7 +145,7 @@ pub fn compile_all() {
             let compilers = get_compiler(language_struct.name);
             for compiler in compilers {
                 if compiler != "Unknown compiler, please specify it in config.cly"{
-                    let output = Command::new(compiler).arg("-v").output().unwrap();
+                    let output = Cmd::new(compiler).arg("-v").output().unwrap();
                     if output.status.success() {
                         info!("{}: {}", language_struct.name, String::from_utf8(output.stdout).unwrap());
                     }
@@ -182,4 +159,96 @@ pub fn compile_all() {
 
     println!("{}", format!("Done.").to_string().blue());
     
+}
+
+pub fn shell(cmd: &str, stdout: bool) {
+
+    let output = Cmd::new(cmd).output().unwrap();
+    if stdout {
+        println!("{}", String::from_utf8(output.stdout).unwrap());
+    }     
+}
+
+pub fn banner(matches: ArgMatches) {
+    let availableupdates = updater::check(CATALYST_VERSION);
+    if availableupdates {
+        if matches.get_flag("verbose") {
+            let sys = System::new_all();
+            if matches.get_flag("debug") {
+                println!("{}", format!("Catalyst. version {} {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB, {}", CATALYST_VERSION.purple(), "Update available".bright_green().bold(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple(), "Debug mode".yellow().bold()).blue());
+            }
+            else {
+                println!("{}", format!("Catalyst. version {} {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB", CATALYST_VERSION.purple(), "Update available".bright_green().bold(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple()).blue());
+            }
+        }
+        else {
+            if matches.get_flag("debug") {
+                println!("{}", format!("Catalyst, version {} {}, Platform: {}, {}", CATALYST_VERSION.purple(), "Update available".bright_green().bold(), System::name().unwrap().purple(), "Debug mode".yellow().bold()).blue());
+            }
+            else{
+                println!("{}", format!("Catalyst, version {} {}, Platform: {}", CATALYST_VERSION.purple(), "Update available".bright_green().bold(), System::name().unwrap().purple()).blue());
+            }
+        }
+    }
+    else{
+        if matches.get_flag("verbose") {
+            let sys = System::new_all();
+            if matches.get_flag("debug") {
+                println!("{}", format!("Catalyst. version {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB, {}", CATALYST_VERSION.purple(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple(), "Debug mode".yellow().bold()).blue());
+            }
+            else {
+                println!("{}", format!("Catalyst. version {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB", CATALYST_VERSION.purple(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple()).blue());
+            }
+        }
+        else {
+            if matches.get_flag("debug") {
+                println!("{}", format!("Catalyst, version {}, Platform: {}, {}", CATALYST_VERSION.purple(), System::name().unwrap().purple(), "Debug mode".yellow().bold()).blue());
+            }
+            else{
+                println!("{}", format!("Catalyst, version {}, Platform: {}", CATALYST_VERSION.purple(), System::name().unwrap().purple()).blue());
+            }
+        }
+    }
+}
+
+pub fn args() -> ArgMatches {
+    let styles = Styles::styled()
+        .usage(Style::new().bold().underline().fg_color(Some(Color::Ansi(AnsiColor::Yellow))))
+        .header(Style::new().bold().underline().fg_color(Some(Color::Ansi(AnsiColor::Yellow))))
+        .literal(Style::new().fg_color(Some(Color::Ansi(AnsiColor::Green))))
+        .invalid(Style::new().bold().fg_color(Some(Color::Ansi(AnsiColor::Red))))
+        .error(Style::new().bold().fg_color(Some(Color::Ansi(AnsiColor::Red))))
+        .valid(Style::new().bold().underline().fg_color(Some(Color::Ansi(AnsiColor::Green))))
+        .placeholder(Style::new().fg_color(Some(Color::Ansi(AnsiColor::Magenta))));
+
+    let cmd = command!()
+        .styles(styles)
+        .version(CATALYST_VERSION)
+        .arg(
+            arg!(-c --config <FILE> "Configuration file to use, default: .catalyst/config.cly.json")
+                .required(false)
+                .action(ArgAction::Set)
+                .value_parser(value_parser!(String)),
+        )
+        .arg(
+            arg!(-n --nologs "Disables logging")
+                .action(ArgAction::SetTrue)
+                .required(false),
+        )
+        .arg(
+            arg!(-d --debug ... "Turn debug information on")
+                .action(ArgAction::SetTrue)
+                .required(false),
+        )
+        .arg(
+            arg!(-v --verbose ... "Turn verbose information on")
+                .action(ArgAction::SetTrue)
+                .required(false),
+        )
+        .subcommand(Command::new("init").about("Initializes a new configuration file"))
+        .subcommand(Command::new("cleanup").about("Cleans up the logs."))
+        .subcommand(Command::new("update").about("Updates the catalyst application."))
+        .subcommand(Command::new("check").about("Checks for updates."));
+
+    cmd.get_matches()
 }
