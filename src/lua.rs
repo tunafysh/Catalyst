@@ -140,6 +140,8 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
 
     Ok(())
     })?).unwrap();
+
+    
     let script_content = fs::read_to_string(path);
     match script_content {
         Err(err) => {

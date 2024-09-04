@@ -1,6 +1,6 @@
 use clap::ArgMatches;
-use log::LevelFilter;
-use std::{env::consts, fs, path::Path, time::SystemTime};
+use log::{error, LevelFilter};
+use std::{env::consts, fs, path::Path, process::exit, time::SystemTime};
 use fern::colors::{Color, ColoredLevelConfig};
 use whoami::username;
 
@@ -17,7 +17,8 @@ let logdir = if consts::OS == "windows" {
         match fs::create_dir_all(logdir){
             Ok(_) => {}
             Err(_) => {
-                println!("Failed to create logs directory");
+                error!("Failed to create logs directory");
+                exit(1);
             }
         }
     }
@@ -27,7 +28,8 @@ let logdir = if consts::OS == "windows" {
     match fs::File::create(logfile.clone()){
         Ok(_) => {}
         Err(_) => {
-            println!("Failed to create logs file");
+            error!("Failed to create logs file");
+            exit(1);
         }
     };
     let loglevel: LevelFilter;
