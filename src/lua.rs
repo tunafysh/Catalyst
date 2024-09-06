@@ -1,9 +1,11 @@
-use std::{fs, process::{self, Command}, env};
+use std::{env, fs, process::{self, Command}};
+use clap::builder::Str;
 use mlua::prelude::*;
 use git2::{Repository, SubmoduleUpdateOptions};
 use log::{error, info, warn};
+use reqwest::Client;
 
-use crate::util::{compile_all, find_file, prompt};
+use crate::util::{self, compile_all, extract_zip, find_file, package_zip, prompt};
 
 pub fn run_script(path: String) -> Result<(), LuaError> {
     let lua = Lua::new();
@@ -141,8 +143,25 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
     Ok(())
     })?).unwrap();
 
-    
+    globals.set("fetch", lua.create_function(move |_, url: String| {
+        let client = Client::new();
+
+        let _ = client.get(url);
+        Ok(())
+    })?).unwrap();
+
+    globals.set("zip", lua.create_function(move |_, (items, dest): (Vec<&str>, String)| {
+        package_zip(items, dest.as_str()).unwrap();
+        Ok(())
+    })?).unwrap();
+
+    globals.set("unzip", lua.create_function(move |_, (file, dest): (String, String)| {
+         extract_zip(file, dest).unwrap();
+         Ok(())
+    })?).unwrap();
+
     let script_content = fs::read_to_string(path);
+
     match script_content {
         Err(err) => {
             error!("Failed to read script: {}", err);

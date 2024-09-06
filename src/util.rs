@@ -1,4 +1,4 @@
-use std::{fs, io::{self, Error, Write}, path::Path, process::Command as Cmd, vec};
+use std::{fs::{self, File}, io::{self, BufReader, BufWriter, Error, Read, Write}, path::Path, process::Command as Cmd, vec};
 use anstyle::{Style, Color, AnsiColor};
 use clap::{arg, builder::Styles, command, value_parser, ArgAction, ArgMatches, Command};
 use hex_rgb::{convert_hexcode_to_rgb, Color as rgbcolor};
@@ -8,6 +8,7 @@ use serde_json::to_string_pretty;
 use sysinfo::System;
 use walkdir::WalkDir;
 use colored::Colorize;
+use zip::{write::FullFileOptions, ZipArchive, ZipWriter};
 
 use crate::{structs, updater, CATALYST_VERSION};
 
@@ -251,4 +252,50 @@ pub fn args() -> ArgMatches {
         .subcommand(Command::new("check").about("Checks for updates."));
 
     cmd.get_matches()
+}
+
+pub fn extract_zip(file: String, dest: String) -> zip::result::ZipResult<()> {
+    let path = std::path::Path::new(file.as_str());
+    let file = File::open(&path)?;
+    let mut archive = ZipArchive::new(BufReader::new(file))?;
+
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i)?;
+        let outpath = std::path::Path::new(dest.as_str());
+
+        if file.name().ends_with('/') {
+            std::fs::create_dir_all(&outpath)?;
+        } else {
+            if let Some(p) = outpath.parent() {
+                if !p.exists() {
+                    std::fs::create_dir_all(&p)?;
+                }
+            }
+            let mut outfile = File::create(&outpath)?;
+            std::io::copy(&mut file, &mut outfile)?;
+        }
+    }
+    Ok(())
+}
+
+pub fn package_zip(file_paths: Vec<&str>, zip_path: &str) -> zip::result::ZipResult<()> {
+    let path = Path::new(zip_path);
+    let file = File::create(&path)?;
+    let mut zip = ZipWriter::new(BufWriter::new(file));
+    let options = FullFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+
+    for file_path in file_paths {
+        let path = Path::new(file_path);
+        let mut f = File::open(&path)?;
+        let mut buffer = Vec::new();
+        f.read_to_end(&mut buffer)?;
+        let _ = zip.start_file(
+            path.file_name().unwrap().to_str().unwrap(),
+            options.clone()
+        )?;
+        zip.write_all(&buffer)?;
+    }
+
+    zip.finish()?;
+    Ok(())
 }
