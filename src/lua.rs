@@ -1,11 +1,10 @@
 use std::{env, fs, process::{self, Command}};
-use clap::builder::Str;
 use mlua::prelude::*;
 use git2::{Repository, SubmoduleUpdateOptions};
 use log::{error, info, warn};
 use reqwest::Client;
 
-use crate::util::{self, compile_all, extract_zip, find_file, package_zip, prompt};
+use crate::util::{compile_all, extract_zip, find_file, package_zip, prompt};
 
 pub fn run_script(path: String) -> Result<(), LuaError> {
     let lua = Lua::new();
@@ -150,7 +149,7 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
         Ok(())
     })?).unwrap();
 
-    globals.set("zip", lua.create_function(move |_, (items, dest): (Vec<&str>, String)| {
+    globals.set("zip", lua.create_function(move |_, (items, dest): (Vec<String>, String)| {
         package_zip(items, dest.as_str()).unwrap();
         Ok(())
     })?).unwrap();

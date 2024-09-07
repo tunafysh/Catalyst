@@ -1,5 +1,5 @@
 use std::{fs::{self, File}, io::{self, BufReader, BufWriter, Error, Read, Write}, path::Path, process::Command as Cmd, vec};
-use anstyle::{Style, Color, AnsiColor};
+use anstyle::{AnsiColor, Color, Style};
 use clap::{arg, builder::Styles, command, value_parser, ArgAction, ArgMatches, Command};
 use hex_rgb::{convert_hexcode_to_rgb, Color as rgbcolor};
 use hyperpolyglot::{get_language_breakdown, Language};
@@ -170,48 +170,6 @@ pub fn shell(cmd: &str, stdout: bool) {
     }     
 }
 
-pub fn banner(matches: ArgMatches) {
-    let availableupdates = updater::check(CATALYST_VERSION);
-    if availableupdates {
-        if matches.get_flag("verbose") {
-            let sys = System::new_all();
-            if matches.get_flag("debug") {
-                println!("{}", format!("Catalyst. version {} {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB, {}", CATALYST_VERSION.purple(), "Update available".bright_green().bold(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple(), "Debug mode".yellow().bold()).blue());
-            }
-            else {
-                println!("{}", format!("Catalyst. version {} {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB", CATALYST_VERSION.purple(), "Update available".bright_green().bold(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple()).blue());
-            }
-        }
-        else {
-            if matches.get_flag("debug") {
-                println!("{}", format!("Catalyst, version {} {}, Platform: {}, {}", CATALYST_VERSION.purple(), "Update available".bright_green().bold(), System::name().unwrap().purple(), "Debug mode".yellow().bold()).blue());
-            }
-            else{
-                println!("{}", format!("Catalyst, version {} {}, Platform: {}", CATALYST_VERSION.purple(), "Update available".bright_green().bold(), System::name().unwrap().purple()).blue());
-            }
-        }
-    }
-    else{
-        if matches.get_flag("verbose") {
-            let sys = System::new_all();
-            if matches.get_flag("debug") {
-                println!("{}", format!("Catalyst. version {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB, {}", CATALYST_VERSION.purple(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple(), "Debug mode".yellow().bold()).blue());
-            }
-            else {
-                println!("{}", format!("Catalyst. version {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB", CATALYST_VERSION.purple(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple()).blue());
-            }
-        }
-        else {
-            if matches.get_flag("debug") {
-                println!("{}", format!("Catalyst, version {}, Platform: {}, {}", CATALYST_VERSION.purple(), System::name().unwrap().purple(), "Debug mode".yellow().bold()).blue());
-            }
-            else{
-                println!("{}", format!("Catalyst, version {}, Platform: {}", CATALYST_VERSION.purple(), System::name().unwrap().purple()).blue());
-            }
-        }
-    }
-}
-
 pub fn args() -> ArgMatches {
     let styles = Styles::styled()
         .usage(Style::new().bold().underline().fg_color(Some(Color::Ansi(AnsiColor::Yellow))))
@@ -254,6 +212,48 @@ pub fn args() -> ArgMatches {
     cmd.get_matches()
 }
 
+pub fn banner(matches: ArgMatches) {
+    let availableupdates = updater::check(CATALYST_VERSION);
+    if availableupdates {
+        if matches.get_flag("verbose") {
+            let sys = System::new_all();
+            if matches.get_flag("debug") {
+                println!("{}", format!("Catalyst. version {} {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB, {}", CATALYST_VERSION.purple(), "Update available".bright_green().bold(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple(), "Debug mode".yellow().bold()).blue());
+            }
+            else {
+                println!("{}", format!("Catalyst. version {} {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB", CATALYST_VERSION.purple(), "Update available".bright_green().bold(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple()).blue());
+            }
+        }
+        else {
+            if matches.get_flag("debug") {
+                println!("{}", format!("Catalyst, version {} {}, Platform: {}, {}", CATALYST_VERSION.purple(), "Update available".bright_green().bold(), System::name().unwrap().purple(), "Debug mode".yellow().bold()).blue());
+            }
+            else{
+                println!("{}", format!("Catalyst, version {} {}, Platform: {}", CATALYST_VERSION.purple(), "Update available".bright_green().bold(), System::name().unwrap().purple()).blue());
+            }
+        }
+    }
+    else{
+        if matches.get_flag("verbose") {
+            let sys = System::new_all();
+            if matches.get_flag("debug") {
+                println!("{}", format!("Catalyst. version {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB, {}", CATALYST_VERSION.purple(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple(), "Debug mode".yellow().bold()).blue());
+            }
+            else {
+                println!("{}", format!("Catalyst. version {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB", CATALYST_VERSION.purple(), System::name().unwrap().purple(), System::cpu_arch().unwrap().to_string().purple(), sys.cpus().len().to_string().purple(), ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple()).blue());
+            }
+        }
+        else {
+            if matches.get_flag("debug") {
+                println!("{}", format!("Catalyst, version {}, Platform: {}, {}", CATALYST_VERSION.purple(), System::name().unwrap().purple(), "Debug mode".yellow().bold()).blue());
+            }
+            else{
+                println!("{}", format!("Catalyst, version {}, Platform: {}", CATALYST_VERSION.purple(), System::name().unwrap().purple()).blue());
+            }
+        }
+    }
+}
+
 pub fn extract_zip(file: String, dest: String) -> zip::result::ZipResult<()> {
     let path = std::path::Path::new(file.as_str());
     let file = File::open(&path)?;
@@ -278,14 +278,14 @@ pub fn extract_zip(file: String, dest: String) -> zip::result::ZipResult<()> {
     Ok(())
 }
 
-pub fn package_zip(file_paths: Vec<&str>, zip_path: &str) -> zip::result::ZipResult<()> {
+pub fn package_zip(file_paths: Vec<String>, zip_path: &str) -> zip::result::ZipResult<()> {
     let path = Path::new(zip_path);
     let file = File::create(&path)?;
     let mut zip = ZipWriter::new(BufWriter::new(file));
     let options = FullFileOptions::default().compression_method(zip::CompressionMethod::Stored);
 
     for file_path in file_paths {
-        let path = Path::new(file_path);
+        let path = Path::new(file_path.as_str());
         let mut f = File::open(&path)?;
         let mut buffer = Vec::new();
         f.read_to_end(&mut buffer)?;

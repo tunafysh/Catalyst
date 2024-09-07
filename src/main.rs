@@ -1,6 +1,6 @@
 use std::{env::consts, fs, path::Path, process};
 use colored::Colorize;
-use log::{error, info};
+use log::{error, info, warn};
 
 mod structs;
 mod util;
@@ -8,7 +8,7 @@ mod logger;
 mod updater;
 mod lua;
 
-const CATALYST_VERSION: &str = "0.6.3";
+const CATALYST_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
     let matches = util::args();
@@ -78,7 +78,7 @@ fn main() {
     if matches.get_flag("debug") == false {
         if config.len() != 0 {
             if !config[0].contains(".cly.json") {
-                println!("{}", "Not a configuration file.".to_string().red());
+                error!("{}", "Not a configuration file.".to_string());
                 process::exit(2);
             }
 
@@ -87,7 +87,7 @@ fn main() {
             info!("Scanning for config files...");
             match util::find_file("src/.catalyst/", vec!["config.cly.json"]) {
                 Err(_) => {
-                    error!("{}", "No config file found. Please create a configuration file as i don't know what this directory is...".to_string().red());
+                    warn!("{}", "No config file found. Please create a configuration file as i don't know what this directory is...".to_string());
                     process::exit(1);
                 }
                 Ok(path) => {
@@ -96,12 +96,12 @@ fn main() {
                     info!("Parsing...");
                     conf = match fs::read_to_string(config) {
                         Err(_) => {
-                            error!("{}", "Cannot read configuration file.".to_string().red());
+                            error!("{}", "Cannot read configuration file.".to_string());
                             process::exit(3);
                         }
                         Ok(cf) => match serde_json::from_str(&cf) {
                             Err(_) => {
-                                error!("{}", "Inavlid configuration file.".to_string().red());
+                                error!("{}", "Inavlid configuration file.".to_string());
                                 process::exit(4);
                             }
                             Ok(c) => c,
@@ -137,6 +137,6 @@ fn main() {
             let _ = lua::run_script(format!("src/.catalyst/{}.cly", hook));
         }
     } else {
-        info!("No hooks found. Please create a hook as i don't know what to do here...");
+        warn!("No hooks found. Please create a hook as i don't know what to do here...");
     }
 }
