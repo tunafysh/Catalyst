@@ -4,17 +4,14 @@ on:
             key:
                 description: 'Catalyst version key'
                 required: true
-                default: 'key'
                 type: string
             version:
                 description: 'Catalyst version'
                 required: true
-                default: 'version'
                 type: string
             release_description:
                 description: 'Release description'
                 required: true
-                default: 'Release description'
                 type: string
         
 jobs:
@@ -27,7 +24,7 @@ jobs:
             CATALYST_VERSION: ${{ inputs.version }}
         steps:
         - run: |
-            cd ..
+            ls
             cargo build -r
             mkdir build-linux
             cp target/release/{cly,clyhandler} build-linux/
@@ -43,7 +40,7 @@ jobs:
             CATALYST_VERSION: ${{ inputs.version }}
         steps:
         - run: |
-            cd ..
+            ls
             cargo build -r
             mkdir build-win
             cp target/release/cly.exe build-win/
