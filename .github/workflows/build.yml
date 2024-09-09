@@ -1,0 +1,77 @@
+on:
+    workflow_dispatch:
+        inputs:
+            key:
+                description: 'Catalyst version key'
+                required: true
+                default: 'key'
+                type: string
+            version:
+                description: 'Catalyst version'
+                required: true
+                default: 'version'
+                type: string
+            release_description:
+                description: 'Release description'
+                required: true
+                default: 'Release description'
+                type: string
+        
+jobs:
+    linux-build:
+        name: Build-linux
+        runs-on: ubuntu-latest           
+
+        env:
+            CATALYST_KEY: ${{ inputs.key }}
+            CATALYST_VERSION: ${{ inputs.version }}
+        steps:
+        - run: |
+            sudo apt update && sudo apt install libssl-dev curl
+            cargo build -r
+            mkdir build-linux
+            cp target/release/{cly,clyhandler} build-linux/
+            cd build-linux
+            zip -r ../cly-linux-${{ runner.arch }}.zip .
+            curl --json '{"key": "${{ env.CATALYST_KEY }}", "version": "${{ env.CATALYST_VERSION }}"}' https://cly-rs.vercel.app/api/version
+
+    windows-build:
+        name: Build-windows
+        runs-on: windows-latest
+        env:
+            CATALYST_KEY: ${{ inputs.key }}
+            CATALYST_VERSION: ${{ inputs.version }}
+        steps:
+        - run: |
+            cargo build -r
+            mkdir build-win
+            cp target/release/{cly,clyhandler}.exe build-win/
+            cd build-win
+            Compress-Archive -Path *.exe -DestinationPath cly-windows-${{ runner.arch }}.zip
+    
+    create-release:
+        name: Create release
+        runs-on: ubuntu-latest
+        needs: [linux-build, windows-build]
+        steps:
+        - uses: actions/download-artifact@v2
+          name: Download linux build
+          with:
+            name: linux-build
+            path: build-linux
+
+        - uses: actions/download-artifact@v2
+          name: Download windows build
+          with:
+            name: windows-build
+            path: build-win
+        - run: |
+            mkdir release
+            cp build-linux/*.zip release
+            cp build-win/*.zip release
+        - uses: actions/upload-artifact@v2
+          name: Upload release
+          with:
+            name: ${{ inputs.version}}
+            description: ${{ inputs.release_description }}
+            path: release/*.zip
