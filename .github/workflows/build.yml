@@ -27,7 +27,7 @@ jobs:
             CATALYST_VERSION: ${{ inputs.version }}
         steps:
         - run: |
-            sudo apt install libssl-dev curl
+            cd ..
             cargo build -r
             mkdir build-linux
             cp target/release/{cly,clyhandler} build-linux/
@@ -43,6 +43,7 @@ jobs:
             CATALYST_VERSION: ${{ inputs.version }}
         steps:
         - run: |
+            cd ..
             cargo build -r
             mkdir build-win
             cp target/release/cly.exe build-win/
