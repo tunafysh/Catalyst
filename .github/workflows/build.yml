@@ -23,6 +23,7 @@ jobs:
             CATALYST_KEY: ${{ inputs.key }}
             CATALYST_VERSION: ${{ inputs.version }}
         steps:
+        - uses: actions/checkout@v4
         - run: |
             cd linux-build
             cargo build --config Cargo.toml -r
@@ -39,6 +40,7 @@ jobs:
             CATALYST_KEY: ${{ inputs.key }}
             CATALYST_VERSION: ${{ inputs.version }}
         steps:
+        - uses: actions/checkout@v4
         - run: |
             cd windows-build
             cargo build -r
