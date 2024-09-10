@@ -25,7 +25,7 @@ jobs:
         steps:
         - uses: actions/checkout@v4
         - run: |
-            cargo build --config Cargo.toml -r
+            cargo build -r
             mkdir build-linux
             cp target/release/{cly,clyhandler} build-linux/
             cd build-linux
