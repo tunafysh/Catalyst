@@ -24,7 +24,7 @@ jobs:
             CATALYST_VERSION: ${{ inputs.version }}
         steps:
         - run: |
-            cd build-linux
+            cd linux-build
             cargo build --config Cargo.toml -r
             mkdir build-linux
             cp target/release/{cly,clyhandler} build-linux/
@@ -40,7 +40,7 @@ jobs:
             CATALYST_VERSION: ${{ inputs.version }}
         steps:
         - run: |
-            cd build-win
+            cd windows-build
             cargo build -r
             mkdir build-win
             cp target/release/cly.exe build-win/
