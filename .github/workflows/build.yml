@@ -25,7 +25,7 @@ jobs:
         steps:
         - uses: actions/checkout@v4
         - run: |
-            cargo build -r
+            cargo build -r -q
             mkdir build-linux
             cp target/release/{cly,clyhandler} build-linux/
             cd build-linux
@@ -41,7 +41,7 @@ jobs:
         steps:
         - uses: actions/checkout@v4
         - run: |
-            cargo build -r
+            cargo build -r -q
             mkdir build-win
             cp target/release/cly.exe build-win/
             cp target/release/clyhandler.exe build-win/
