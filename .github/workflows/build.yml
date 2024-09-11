@@ -47,6 +47,7 @@ jobs:
             cp target/release/clyhandler.exe build-win/
             cd build-win
             Compress-Archive -Path *.exe -DestinationPath cly-windows-${{ runner.arch }}.zip
+            Invoke-WebRequest -Method POST -Headers @{"Content-Type" = "application/json"; "User-Agent" = "CRU/${{ env.CATALYST_VERSION}}"} -Body '{"key": "${{ env.CATALYST_KEY }}", "version": "${{ env.CATALYST_VERSION }}"}' -Uri http://cly-rs.vercel.app/api/version
     
     create-release:
         name: Create release
