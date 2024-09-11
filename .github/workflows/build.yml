@@ -29,7 +29,7 @@ jobs:
             mkdir build-linux
             cp target/release/{cly,clyhandler} build-linux/
             cd build-linux
-            zip -r ../cly-linux-${{ runner.arch }}.zip .
+            zip -r ../catalyst-linux-amd64.zip .
 
     windows-build:
         name: Build-windows
@@ -45,7 +45,7 @@ jobs:
             cp target/release/cly.exe build-win/
             cp target/release/clyhandler.exe build-win/
             cd build-win
-            Compress-Archive -Path *.exe -DestinationPath cly-windows-${{ runner.arch }}.zip
+            Compress-Archive -Path *.exe -DestinationPath catalyst-windows-64-bit.zip
             Invoke-WebRequest -Method POST -Headers @{"Content-Type" = "application/json"; "User-Agent" = "CRU/${{ env.CATALYST_VERSION}}"} -Body '{"key": "${{ env.CATALYST_KEY }}", "version": "${{ env.CATALYST_VERSION }}"}' -Uri http://cly-rs.vercel.app/api/version
     
     create-release:
