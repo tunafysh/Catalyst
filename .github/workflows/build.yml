@@ -30,7 +30,6 @@ jobs:
             cp target/release/{cly,clyhandler} build-linux/
             cd build-linux
             zip -r ../cly-linux-${{ runner.arch }}.zip .
-            curl --json '{"key": "${{ env.CATALYST_KEY }}", "version": "${{ env.CATALYST_VERSION }}"}' https://cly-rs.vercel.app/api/version
 
     windows-build:
         name: Build-windows
