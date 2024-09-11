@@ -5,6 +5,7 @@ use log::{error, info, warn};
 mod structs;
 mod util;
 mod logger;
+mod debug;
 mod updater;
 mod lua;
 
@@ -30,10 +31,13 @@ fn main() {
             let gensuccess = util::generate();
             process::exit(gensuccess as i32);
         }
-        _ => {}
-    }
+        Some(("update", _)) => {
+            updater::update(CATALYST_VERSION);
+        }
 
-    match matches.subcommand() {
+        Some(("check", _)) => {
+            updater::check(CATALYST_VERSION);
+        }
         Some(("cleanup", _)) => {
             let logdir = if consts::OS == "windows" {
                 Path::new("C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\Catalyst")
@@ -52,18 +56,8 @@ fn main() {
         _ => {}
     }
 
-    match matches.subcommand() {
-        Some(("update", _)) => {
-            updater::update(CATALYST_VERSION);
-        }
-        _ => {}
-    }
-
-    match matches.subcommand() {
-        Some(("check", _)) => {
-            updater::check(CATALYST_VERSION);
-        }
-        _ => {}
+    if matches.get_flag("debug") {
+        debug::debug();
     }
 
     let mut conf: structs::Config = structs::Config {
@@ -75,7 +69,6 @@ fn main() {
 
     let config = matches.get_many::<String>("config").unwrap_or_default().into_iter().map(|v| v.as_str()).collect::<Vec<_>>();
 
-    if matches.get_flag("debug") == false {
         if config.len() != 0 {
             if !config[0].contains(".cly.json") {
                 error!("{}", "Not a configuration file.".to_string());
@@ -109,7 +102,6 @@ fn main() {
                     };
                 }
             }
-        }
     }
 
     let confver = match conf.version {

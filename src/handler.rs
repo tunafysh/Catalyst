@@ -11,7 +11,17 @@ fn main() {
     if url.scheme() == "cly" {
         let path = &url.as_str()[6..];
         println!("Executing command: cly {}", path);
-        let _ = Command::new("cly").arg(path).stdout(stdout()).spawn();
+        let mut command = Command::new("cmd");
+        if cfg!(target_family = "unix") {
+            let terminal = std::env::var("TERM").unwrap();
+            command = Command::new(terminal);
+        }
+        let _ = command
+            .arg("-e")
+            .arg("cly")
+            .arg(path)
+            .stdout(stdout())
+            .spawn();
         exit(0);
     } else {
         eprintln!("Invalid URL: {}", url);
