@@ -1,5 +1,5 @@
 on:
-    workflow_dispatch:
+   workflow_dispatch:
         inputs:
             key:
                 description: 'Catalyst version key'
