@@ -5,14 +5,17 @@ on:
                 description: 'Catalyst version key'
                 required: true
                 type: string
+                default: 'your_key_value'
             version:
                 description: 'Catalyst version'
                 required: true
                 type: string
+                default: 'your_version_value'
             release_description:
                 description: 'Release description'
                 required: true
                 type: string
+                default: 'your_release_description_value'
 
 jobs:
     linux-build:
