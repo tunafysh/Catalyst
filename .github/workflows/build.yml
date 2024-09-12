@@ -31,6 +31,12 @@ jobs:
             cd build-linux
             zip -r ../catalyst-linux-amd64.zip .
 
+        - uses: actions/upload-artifact@v4
+          name: Upload linux build
+          with:
+            name: build-linux
+            path: *.zip
+
     windows-build:
         name: Build-windows
         runs-on: windows-latest
@@ -45,8 +51,13 @@ jobs:
             cp target/release/cly.exe build-win/
             cp target/release/clyhandler.exe build-win/
             cd build-win
-            Compress-Archive -Path *.exe -DestinationPath catalyst-windows-64-bit.zip
+            Compress-Archive -Path *.exe -DestinationPath ../catalyst-windows-64-bit.zip
             Invoke-WebRequest -Method POST -Headers @{"Content-Type" = "application/json"; "User-Agent" = "CRU/${{ env.CATALYST_VERSION}}"} -Body '{"key": "${{ env.CATALYST_KEY }}", "version": "${{ env.CATALYST_VERSION }}"}' -Uri http://cly-rs.vercel.app/api/version
+        - uses: actions/upload-artifact@v4
+          name: Upload windows build
+          with:
+            name: build-win
+            path: *.zip
     
     create-release:
         name: Create release
