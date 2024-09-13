@@ -1,5 +1,5 @@
 use std::process::exit;
-use colored::Colorize;
+use owo_colors::{OwoColorize, Stream};
 use reqwest::blocking::Client;
 use reqwest::header::{HeaderMap, USER_AGENT};
 use sysinfo::{self, System};
@@ -72,10 +72,10 @@ pub fn check(ver: &str) -> bool {
     let response = res.text().unwrap();
 
     if response == "Equalver" {
-        println!("{}", "Catalyst is already up to date.".blue());
+        println!("{}", "Catalyst is already up to date.".if_supports_color(Stream::Stdout, |text| text.blue()));
         return true;
     } else if response == "largerver" {
-        println!("{}", "Cannot update because the this build may have been tampered or it is a custom build. Please reinstall...".red());
+        println!("{}", "Cannot update because the this build may have been tampered or it is a custom build. Please reinstall...".if_supports_color(Stream::Stdout, |text| text.red()));
         error!("Tried to update but app was modified.");
     }
     else if response == "updateavailable" {

@@ -1,13 +1,14 @@
 use std::{io::{stdin, stdout, Write}, process::exit};
-use colored::Colorize;
+use owo_colors::{OwoColorize, Stream::Stdout};
 use log::{info, warn};
 
 pub fn debug() {
+    
     let _ = std::process::Command::new(if cfg!(target_family = "windows") {"cls"} else {"clear"}).status().unwrap().success();
     info!("Debug mode enabled, dropping to Debug shell");
     loop {
         let mut cmd = String::new();
-        print!("{}", "Debug > ".blue().bold());
+        print!("{}", "Debug > ".if_supports_color(Stdout, |text| text.bright_purple()).bold());
         let _ = stdout().flush();
         stdin().read_line(&mut cmd).expect("Failed to read line");
         let cmd = cmd.trim();
@@ -25,7 +26,7 @@ pub fn debug() {
                 continue;
             }
             "help" => {
-                println!("{}", "Commands".underline().purple());
+                println!("{}", "Commands".if_supports_color(Stdout, |text| text.purple()).underline());
                 println!("  exit");
                 println!("  ping");
                 println!("  clr, clear");

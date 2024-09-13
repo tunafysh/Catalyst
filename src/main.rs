@@ -1,5 +1,5 @@
 use std::{env::consts, fs, path::Path, process};
-use colored::Colorize;
+use owo_colors::{OwoColorize, Stream::Stdout};
 use log::{error, info, warn};
 
 mod structs;
@@ -17,7 +17,7 @@ fn main() {
         match logger::setup_logger(matches.clone()) {
             Ok(_) => {}
             Err(err) => {
-                println!("{}", format!("Failed to setup logger. Error: {}", err).to_string().red());
+                println!("{}", format!("Failed to setup logger. Error: {}", err).to_string().if_supports_color(Stdout, |text| text.red()));
                 process::exit(1);
             }
         }
@@ -75,7 +75,7 @@ fn main() {
                 process::exit(2);
             }
 
-            info!("{}", format!("Using configuration file: {}", config[0].purple()).blue());
+            info!("{}", format!("Using configuration file: {}", config[0].if_supports_color(Stdout, |text| text.purple()).blue()));
         } else {
             info!("Scanning for config files...");
             match util::find_file("src/.catalyst/", vec!["config.cly.json"]) {
@@ -84,7 +84,7 @@ fn main() {
                     process::exit(1);
                 }
                 Ok(path) => {
-                    info!("Found config file: {}", path.display().to_string().purple());
+                    info!("Found config file: {}", path.display().to_string().if_supports_color(Stdout, |text| text.purple()));
                     let config = path.display().to_string();
                     info!("Parsing...");
                     conf = match fs::read_to_string(config) {
@@ -117,7 +117,7 @@ fn main() {
                 conf.name, confver, conf.working_directory, conf.hooks.join(", ")
             )
             .to_string()
-            .magenta()
+            .if_supports_color(Stdout, |text| text.magenta())
         );
     }
 
@@ -125,7 +125,7 @@ fn main() {
         info!("Running hooks...");
         for hook in conf.hooks {
             info!("{}", format!("src/.catalyst/{}.cly", hook));
-            println!("{}", format!("Running hook: {}", hook).to_string().cyan());
+            println!("{}", format!("Running hook: {}", hook).to_string().if_supports_color(Stdout, |text| text.cyan()));
             let _ = lua::run_script(format!("src/.catalyst/{}.cly", hook));
         }
     } else {

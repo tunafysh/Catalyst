@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 anstyle = "1.0.8"
 clap = { version = "4.5.10", features = ["derive", "cargo"] }
-colored = "2.1.0"
 hex-rgb = "0.1.1"
 git2 = "0.19.0"
 hyperpolyglot = "0.1.7"
@@ -23,6 +22,9 @@ zip = { version = "2.2.0", features = ["_all-features"] }
 chrono = "0.4.38"
 url = "2.5.2"
 walkdir = "2.5.0"
+supports-color = "3.0.1"
+strip-ansi-escapes = "0.2.0"
+owo-colors = {version="4.1.0", features = ["supports-color", "supports-colors"]}
 
 [[bin]]
 name = "cly"
@@ -31,3 +33,6 @@ path = "src/main.rs"
 [[bin]]
 name = "clyhandler"
 path = "src/handler.rs"
+
+[build-dependencies]
+thunk-rs = {version = "0.3.2", features = ["xp"]}
