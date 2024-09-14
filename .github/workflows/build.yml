@@ -1,3 +1,5 @@
+name: Catalyst build
+
 on:
     workflow_dispatch:
         inputs:
