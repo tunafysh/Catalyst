@@ -34,6 +34,7 @@ jobs:
             CATALYST_KEY: ${{ inputs.key }}
             CATALYST_VERSION: ${{ inputs.version }}
         steps:
+
         - uses: actions/checkout@v4
         - run: |
             cargo build -r
@@ -42,25 +43,24 @@ jobs:
             cd build-linux
             zip -r ../catalyst-linux-amd64.zip .
 
-        # - uses: actions/upload-artifact@v4
-        #   name: Upload linux build
-        #   with:
-        #     name: build-linux
-        #     path: *.zip
+        - name: Upload artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: windows-build
+            path: ./*.zip
 
     windows-build:
         name: Build-windows
         runs-on: windows-latest
+        
         env:
             CATALYST_KEY: ${{ inputs.key }}
             CATALYST_VERSION: ${{ inputs.version }}
         steps:
-        - uses: actions/checkout@v4
-          with:
-            fetch-depth: 0
-
-          name: Checkout current branch
-        - run: |
+        - name: Checkout code
+          uses: actions/checkout@v4
+        - name: Build
+          run: |
             cargo build -r
             mkdir build-win
             cp target/release/cly.exe build-win/
@@ -68,6 +68,13 @@ jobs:
             cd build-win
             Compress-Archive -Path *.exe -DestinationPath ../catalyst-windows-64-bit.zip
             Invoke-WebRequest -Method POST -Headers @{"Content-Type" = "application/json"; "User-Agent" = "CRU/${{ env.CATALYST_VERSION}}"} -Body '{"key": "${{ env.CATALYST_KEY }}", "version": "${{ env.CATALYST_VERSION }}"}' -Uri http://cly-rs.vercel.app/api/version
+
+        - name: Upload artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: windows-build
+            path: ./*.zip
+            
     
     create-release:
         name: Create release
@@ -75,10 +82,15 @@ jobs:
         needs: [linux-build, windows-build]
         steps:
         - uses: actions/checkout@v4
-        - run: |
-            mkdir release
-            cp build-linux/*.zip release
-            cp build-win/*.zip release
+        - run: mkdir release
+        - uses: actions/download-artifact@v4
+          with:
+            name: windows-build
+            path: release
+        - uses: actions/download-artifact@v4
+          with:
+            name: linux-build
+            path: release
         
         - uses: softprops/action-gh-release@v2
           with:
