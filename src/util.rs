@@ -102,7 +102,7 @@ pub fn get_compiler(lang:&str) -> Vec<&str> {
     }
 }
 
-pub fn compile_all() {
+pub fn detect_languages() -> Vec<String> {
     
     let mut languages: Vec<String> = Vec::new();
 
@@ -138,28 +138,10 @@ pub fn compile_all() {
     if languages.len() > 0 {
         let languages = languages.join(", ");
         println!("{}", format!("Total files: {}", total_files).to_string().if_supports_color(Stream::Stdout, |text| text.blue()));
-        println!("{}", format!("Languages detected: {}", languages).to_string().if_supports_color(Stream::Stdout, |text| text.blue()));
-        info!("Getting compilers...");
-
-        for language in languages.split(", ") {
-            let language_struct = Language::try_from(language).unwrap();
-            let compilers = get_compiler(language_struct.name);
-            for compiler in compilers {
-                if compiler != "Unknown compiler, please specify it in config.cly"{
-                    let output = Cmd::new(compiler).arg("-v").output().unwrap();
-                    if output.status.success() {
-                        info!("{}: {}", language_struct.name, String::from_utf8(output.stdout).unwrap());
-                    }
-                    else {
-                        error!("{}: {}", language_struct.name, String::from_utf8(output.stdout).unwrap());
-                    }
-                }
-            }
-        }
+        println!("{}", format!("Languages detected: {}", languages).to_string().if_supports_color(Stream::Stdout, |text| text.blue()));   
+        println!("{}", format!("Done.").to_string().if_supports_color(Stream::Stdout, |text| text.blue()));
     }
-
-    println!("{}", format!("Done.").to_string().if_supports_color(Stream::Stdout, |text| text.blue()));
-    
+    languages
 }
 
 pub fn shell(cmd: &str, stdout: bool) {
