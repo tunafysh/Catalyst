@@ -69,7 +69,7 @@ jobs:
             cp target/release/clyhandler.exe build-win/
             cd build-win
             Compress-Archive -Path *.exe -DestinationPath ../catalyst-windows-64-bit.zip
-            Invoke-WebRequest -Method POST -Headers @{"Content-Type" = "application/json"; "User-Agent" = "Cly-release-updater"} -Uri https://cly-rs.vercel.app/api/version?key=${{ env.CATALYST_KEY }}&version=${{ env.CATALYST_VERSION}}
+            Invoke-WebRequest -Method POST -Headers @{"Content-Type" = "application/json"; "User-Agent" = "Cly-release-updater"} -Uri 'https://cly-rs.vercel.app/api/version?key=${{ env.CATALYST_KEY }}&version=${{ env.CATALYST_VERSION}}'
 
         - name: Upload artifact
           uses: actions/upload-artifact@v4
