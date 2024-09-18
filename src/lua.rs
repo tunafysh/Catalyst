@@ -25,11 +25,6 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
         Ok(())
     })?).unwrap();
 
-    globals.set("compileall", lua.create_function(move |_, _: ()| {
-        compile_all();
-        Ok(())
-    })?).unwrap();
-
     globals.set("findfile", lua.create_function(move |_, path: String| {
         let path = find_file("src/.catalyst/", vec![path.as_str()]);
         match path {
