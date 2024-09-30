@@ -3,10 +3,11 @@ use owo_colors::{OwoColorize, Stream::Stdout};
 use clearscreen::clear;
 use log::{info, warn, error, debug};
 
-use crate::{lua::run_script, util::find_file};
+use crate::{lua::run_script, util::{banner, args, find_file}};
 
 pub fn debug() {
     clear().expect("failed to clear screen");
+    banner(args());
     info!("Debug mode enabled, dropping to Debug shell");
     loop {
         let mut cmd = String::new();

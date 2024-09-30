@@ -85,23 +85,6 @@ pub fn generate() -> bool {
     true
 }
 
-pub fn get_compiler(lang:&str) -> Vec<&str> {
-    match lang {
-        "C" | "Cpp" => vec!["gcc", "clang"],
-        "CSharp" => vec!["dotnet", "mcs"],
-        "Go" => vec!["go"],
-        "Haskell" => vec!["ghc"],
-        "Java" => vec!["javac"],
-        "Kotlin" => vec!["kotlinc"],
-        "Python" => vec!["python"],
-        "Ruby"  => vec!["ruby"],
-        "Rust"  => vec!["rustc"],
-        "Swift" => vec!["swiftc"],
-        "Assembly" => vec!["nasm"],
-        &_ => vec!["Unknown compiler, please specify it in config.cly"],
-    }
-}
-
 pub fn detect_languages() -> Vec<String> {
     
     let mut languages: Vec<String> = Vec::new();
@@ -196,67 +179,41 @@ pub fn args() -> ArgMatches {
 
 pub fn banner(matches: ArgMatches) {
     let availableupdates = updater::check(CATALYST_VERSION);
-    if availableupdates {
-        if matches.get_flag("verbose") {
-            let sys = System::new_all();
-            if matches.get_flag("debug") {
-                println!("{}", format!("Catalyst. version {} {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB, {}", 
-                CATALYST_VERSION.if_supports_color(Stream::Stdout, |text| text.purple()), 
-                "Update available".if_supports_color(Stream::Stdout, |text| text.bright_green()).if_supports_color(Stream::Stdout, |text| text.bold()),
-                System::name().unwrap().if_supports_color(Stream::Stdout, |text| text.purple()), 
-                System::cpu_arch().unwrap().to_string().if_supports_color(Stream::Stdout, |text| text.purple()),
-                sys.cpus().len().to_string().if_supports_color(Stream::Stdout, |text| text.purple()), 
-                ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().if_supports_color(Stream::Stdout, |text| text.purple()), 
-                "Debug mode".if_supports_color(Stream::Stdout, |text| text.yellow()).if_supports_color(Stream::Stdout, |text| text.bold())).if_supports_color(Stream::Stdout, |text| text.blue()));
-            }
-            else {
-                println!("{}", format!("Catalyst. version {} {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB", 
-                CATALYST_VERSION.if_supports_color(Stream::Stdout, |text| text.purple()), 
-                "Update available".if_supports_color(Stream::Stdout, |text| text.bright_green()).if_supports_color(Stream::Stdout, |text| text.bold()),
-                System::name().unwrap().if_supports_color(Stream::Stdout, |text| text.purple()), 
-                System::cpu_arch().unwrap().to_string().if_supports_color(Stream::Stdout, |text| text.purple()),
-                sys.cpus().len().to_string().if_supports_color(Stream::Stdout, |text| text.purple()), 
-                ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().if_supports_color(Stream::Stdout, |text| text.purple())).if_supports_color(Stream::Stdout, |text| text.blue()));
-            }
-        }
-    }
-    else{
-        if matches.get_flag("verbose") {
-            let sys = System::new_all();
-            if matches.get_flag("debug") {
-                println!("{}", format!("Catalyst. version {} {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB, {}", 
-                CATALYST_VERSION.if_supports_color(Stream::Stdout, |text| text.purple()), 
-                "Update available".if_supports_color(Stream::Stdout, |text| text.bright_green()).if_supports_color(Stream::Stdout, |text| text.bold()),
-                System::name().unwrap().if_supports_color(Stream::Stdout, |text| text.purple()), 
-                System::cpu_arch().unwrap().to_string().if_supports_color(Stream::Stdout, |text| text.purple()),
-                sys.cpus().len().to_string().if_supports_color(Stream::Stdout, |text| text.purple()), 
-                ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().if_supports_color(Stream::Stdout, |text| text.purple()), 
-                "Debug mode".if_supports_color(Stream::Stdout, |text| text.yellow()).if_supports_color(Stream::Stdout, |text| text.bold())).if_supports_color(Stream::Stdout, |text| text.blue()));
-            }
-            else {
-                println!("{}", format!("Catalyst. version {}, Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB", 
-                CATALYST_VERSION.purple(),
-                System::name().unwrap().purple(), 
-                System::cpu_arch().unwrap().to_string().purple(), 
-                sys.cpus().len().to_string().purple(), 
-                ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple()).blue());
-            }
-        }
-        else {
-            if matches.get_flag("debug") {
-                println!("{}", format!("Catalyst, version {} {}, Platform: {}, {}",
-                CATALYST_VERSION.if_supports_color(Stream::Stdout, |text| text.purple()), 
-                "Update available".if_supports_color(Stream::Stdout, |text| text.bright_green()).if_supports_color(Stream::Stdout, |text| text.bold()),
-                System::name().unwrap().if_supports_color(Stream::Stdout, |text| text.purple()), 
-                 "Debug mode".if_supports_color(Stream::Stdout, |text| text.yellow()).if_supports_color(Stream::Stdout, |text| text.bold())).if_supports_color(Stream::Stdout, |text| text.blue()));
-            }
-            else{
-                println!("{}", format!("Catalyst, version {} {}, Platform: {}",
-                CATALYST_VERSION.if_supports_color(Stream::Stdout, |text| text.purple()), 
-                "Update available".if_supports_color(Stream::Stdout, |text| text.bright_green()).if_supports_color(Stream::Stdout, |text| text.bold()),
-                System::name().unwrap().if_supports_color(Stream::Stdout, |text| text.purple())).if_supports_color(Stream::Stdout, |text| text.blue()));
-            }
-        }
+    let sys = System::new_all();
+    let debugmode = matches.get_flag("debug");
+    let verbose = matches.get_flag("verbose");
+    let updatestatus = if availableupdates { "Update available.".green() } else { "Up to date.".green() };
+    let debugstatus = if debugmode { "Debug mode enabled.".yellow() } else { "".yellow()};
+    let platform = System::name().unwrap();
+    let arch = System::cpu_arch().unwrap().to_string();
+    let cores = sys.cpus().len().to_string();
+    let mem = ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string();
+    let version = CATALYST_VERSION.purple();
+    let sysinfo = format!(
+        "Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB",
+        platform.purple(),
+        arch.purple(),
+        cores.purple(),
+        mem.purple(),
+    );
+    if verbose {
+        println!(
+            "{} {} {} {} {}",
+            "Catalyst.".blue(),
+            version.purple(),
+            updatestatus,
+            sysinfo.blue(),
+            debugstatus
+        );
+    } else {
+        println!(
+            "{} {} {}, Platform: {}{}",
+            "Catalyst.".blue(),
+            version.purple(),
+            updatestatus,
+            platform.purple(),
+            debugstatus
+        );
     }
 }
 

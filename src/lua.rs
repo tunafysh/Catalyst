@@ -8,24 +8,31 @@ use crate::util::{detect_languages, extract_zip, find_file, package_zip, prompt}
 
 pub fn run_script(path: String) -> Result<(), LuaError> {
     let lua = Lua::new();
+    let fs = lua.create_table().unwrap();
+    let git = lua.create_table().unwrap();
+    let os = lua.create_table().unwrap();
+    let io = lua.create_table().unwrap();
+    let http = lua.create_table().unwrap();
+    let zip = lua.create_table().unwrap();
+    let log = lua.create_table().unwrap();
     let globals = lua.globals();
 
-    globals.set("log", lua.create_function(move |_, msg: String| {
+    log.set("info", lua.create_function(move |_, msg: String| {
         info!("{}", msg);
         Ok(())
     })?).unwrap();
 
-    globals.set("warn", lua.create_function(move |_, msg: String| {
+    log.set("warn", lua.create_function(move |_, msg: String| {
         warn!("{}", msg);
         Ok(())
     })?).unwrap();
 
-    globals.set("error", lua.create_function(move |_, msg: String| {
+    log.set("error", lua.create_function(move |_, msg: String| {
         error!("{}", msg);
         Ok(())
     })?).unwrap();
 
-    globals.set("findfile", lua.create_function(move |_, path: String| {
+    fs.set("findfile", lua.create_function(move |_, path: String| {
         let path = find_file("src/.catalyst/", vec![path.as_str()]);
         match path {
             Ok(path) => Ok(path.display().to_string()),
@@ -36,7 +43,7 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
         }
     })?).unwrap();
 
-    globals.set("prompt", lua.create_function(move |_, msg: String| {
+    io.set("prompt", lua.create_function(move |_, msg: String| {
         match prompt(msg) {
             None => Ok(String::new()),
             Some(input) => {
@@ -45,7 +52,7 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
         }
     })?).unwrap();
 
-    globals.set("clonerepo", lua.create_function(move |_, (url, dest): (String, String)| {
+    git.set("clonerepo", lua.create_function(move |_, (url, dest): (String, String)| {
         let repo = Repository::clone(url.as_str(), dest);
         match repo {
             Ok(_) => {},
@@ -67,24 +74,24 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
         Ok(())
     })?).unwrap();
 
-    globals.set("getenv", lua.create_function(move |_, key: String| {
+    os.set("getenv", lua.create_function(move |_, key: String| {
         Ok(env::var(key).unwrap_or_default())
     })?).unwrap();
 
-    globals.set("setenv", lua.create_function(move |_, (key, value): (String, String)| {
+    os.set("setenv", lua.create_function(move |_, (key, value): (String, String)| {
         env::set_var(key, value);
         Ok(())
     })?).unwrap();
 
-    globals.set("getcwd", lua.create_function(move |_, _: ()| {
+    fs.set("getcwd", lua.create_function(move |_, _: ()| {
         Ok(env::current_dir().unwrap().display().to_string())
     })?).unwrap();
 
-    globals.set("exists", lua.create_function(move |_, path: String| {
+    fs.set("exists", lua.create_function(move |_, path: String| {
         Ok(fs::metadata(path).is_ok())
     })?).unwrap();
 
-    globals.set("readfile", lua.create_function(move |_, path: String| {
+    fs.set("readfile", lua.create_function(move |_, path: String| {
         let content = fs::read_to_string(path);
         match content {
             Ok(content) => Ok(content),
@@ -95,12 +102,12 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
         }
     })?).unwrap();
 
-    globals.set("writefile", lua.create_function(move |_, (path, content): (String, String)| {
+    fs.set("writefile", lua.create_function(move |_, (path, content): (String, String)| {
         let _ = fs::write(path, content);
         Ok(())
     })?).unwrap();
 
-    globals.set("readjson", lua.create_function(move |_, path: String| {
+    fs.set("readjson", lua.create_function(move |_, path: String| {
         let content = fs::read_to_string(path);
         match content {
             Ok(content) => {
@@ -114,13 +121,13 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
         }
     })?).unwrap();
 
-    globals.set("writejson", lua.create_function(move |_, (path, content): (String, String)| {
+    fs.set("writejson", lua.create_function(move |_, (path, content): (String, String)| {
         let content = serde_json::to_string_pretty(&content).unwrap();
         let _ = fs::write(path, content);
         Ok(())
     })?).unwrap();
 
-    globals.set("submodulesinit", lua.create_function(move |_, _: ()| {
+    git.set("submodulesinit", lua.create_function(move |_, _: ()| {
         let repo = Repository::open("/path/to/your/repo").unwrap();
 
     // Initialize and update submodules
@@ -137,23 +144,30 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
     Ok(())
     })?).unwrap();
 
-    globals.set("fetch", lua.create_function(move |_, url: String| {
+    http.set("fetch", lua.create_function(move |_, url: String| {
         let client = Client::new();
 
         let _ = client.get(url);
         Ok(())
     })?).unwrap();
 
-    globals.set("zip", lua.create_function(move |_, (items, dest): (Vec<String>, String)| {
+    zip.set("zip", lua.create_function(move |_, (items, dest): (Vec<String>, String)| {
         package_zip(items, dest.as_str()).unwrap();
         Ok(())
     })?).unwrap();
 
-    globals.set("unzip", lua.create_function(move |_, (file, dest): (String, String)| {
+    zip.set("unzip", lua.create_function(move |_, (file, dest): (String, String)| {
          extract_zip(file, dest).unwrap();
          Ok(())
     })?).unwrap();
 
+    let _ = globals.set("fs", fs);
+    let _ = globals.set("git", git);
+    let _ = globals.set("os", os);
+    let _ = globals.set("io", io);
+    let _ = globals.set("http", http);
+    let _ = globals.set("zip", zip);
+    let _ = globals.set("log", log);
 
     let script_content = fs::read_to_string(path);
 
