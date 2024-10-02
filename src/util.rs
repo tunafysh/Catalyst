@@ -3,14 +3,14 @@ use anstyle::{AnsiColor, Color, Style};
 use clap::{arg, builder::Styles, command, value_parser, ArgAction, ArgMatches, Command};
 use hex_rgb::{convert_hexcode_to_rgb, Color as rgbcolor};
 use hyperpolyglot::{get_language_breakdown, Language};
-use log::{error, info};
+use log::info;
 use serde_json::to_string_pretty;
 use sysinfo::System;
 use walkdir::WalkDir;
 use owo_colors::{OwoColorize, Stream};
 use zip::{write::FullFileOptions, ZipArchive, ZipWriter};
 
-use crate::{structs, updater, CATALYST_VERSION};
+use crate::{structs, CATALYST_VERSION};
 
 pub fn prompt(msg: String) -> Option<String> {
     print!("{}", msg);
@@ -85,6 +85,7 @@ pub fn generate() -> bool {
     true
 }
 
+#[allow(dead_code)]
 pub fn detect_languages() -> Vec<String> {
     
     let mut languages: Vec<String> = Vec::new();
@@ -127,12 +128,13 @@ pub fn detect_languages() -> Vec<String> {
     languages
 }
 
-pub fn shell(cmd: &str, stdout: bool) {
+pub fn shell(cmd: &str, stdout: bool) -> i32 {
 
     let output = Cmd::new(cmd).output().unwrap();
     if stdout {
         println!("{}", String::from_utf8(output.stdout).unwrap());
     }     
+    output.status.code().unwrap()
 }
 
 pub fn args() -> ArgMatches {
@@ -165,6 +167,12 @@ pub fn args() -> ArgMatches {
                 .required(false),
         )
         .arg(
+            arg!(-H --hook <HOOK> "Run a specific hook")
+            .required(false)
+            .action(ArgAction::Set)
+            .value_parser(value_parser!(String))
+        )
+        .arg(
             arg!(-v --verbose ... "Turn verbose information on")
                 .action(ArgAction::SetTrue)
                 .required(false),
@@ -178,41 +186,41 @@ pub fn args() -> ArgMatches {
 }
 
 pub fn banner(matches: ArgMatches) {
-    let availableupdates = updater::check(CATALYST_VERSION);
     let sys = System::new_all();
     let debugmode = matches.get_flag("debug");
     let verbose = matches.get_flag("verbose");
-    let updatestatus = if availableupdates { "Update available.".green() } else { "Up to date.".green() };
+    // let updatestatus = if availableupdates { "Update available.".green() } else { "Up to date.".green() };
     let debugstatus = if debugmode { "Debug mode enabled.".yellow() } else { "".yellow()};
-    let platform = System::name().unwrap();
-    let arch = System::cpu_arch().unwrap().to_string();
-    let cores = sys.cpus().len().to_string();
-    let mem = ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string();
+    let platform = format!("Platform: {}", System::name().unwrap().purple());
+    let arch = format!("Architecture: {}", System::cpu_arch().unwrap().to_string().purple());
+    let cores = format!("CPU cores: {}", sys.cpus().len().to_string().purple());
+    let mem = format!("Memory: {} GB", ((sys.total_memory() / 1024 / 1024 /1024) + 1).to_string().purple());
     let version = CATALYST_VERSION.purple();
     let sysinfo = format!(
-        "Platform: {}, Architecture: {}, Number of cores: {}, Memory: {} GB",
-        platform.purple(),
-        arch.purple(),
-        cores.purple(),
-        mem.purple(),
+        "{}, {}, {}, {}",
+        platform.blue(),
+        arch.blue(),
+        cores.blue(),
+        mem.blue(),
     );
     if verbose {
         println!(
-            "{} {} {} {} {}",
+            "{} {} {} {}",
             "Catalyst.".blue(),
             version.purple(),
-            updatestatus,
             sysinfo.blue(),
-            debugstatus
+            debugstatus,
         );
     } else {
         println!(
-            "{} {} {}, Platform: {}{}",
-            "Catalyst.".blue(),
-            version.purple(),
-            updatestatus,
-            platform.purple(),
-            debugstatus
+            "{}",
+            format!(
+                "{} {}, {}, {}",
+                "Catalyst.",
+                version.purple(),
+                platform.purple(),
+                debugstatus
+            ).blue()
         );
     }
 }

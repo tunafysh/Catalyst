@@ -1,6 +1,7 @@
 use std::{env::consts, fs, path::Path, process};
 use owo_colors::{OwoColorize, Stream::Stdout};
 use log::{error, info, warn};
+use util::find_file;
 
 mod structs;
 mod util;
@@ -60,6 +61,15 @@ fn main() {
         debug::debug();
     }
 
+    if let Some(hooks) = matches.get_many::<String>("hook") {
+        for hook in hooks {
+            info!("{}", format!("Running hook: {}", hook).to_string().if_supports_color(Stdout, |text| text.cyan()));
+            let file = find_file(".", vec![hook]).unwrap();
+            let _ = lua::run_script(file.display().to_string());
+        }
+        process::exit(0);
+    }
+
     let mut conf: structs::Config = structs::Config {
         name: String::new(),
         version: None,
@@ -80,7 +90,8 @@ fn main() {
             info!("Scanning for config files...");
             match util::find_file("src/.catalyst/", vec!["config.cly.json"]) {
                 Err(_) => {
-                    warn!("{}", "No config file found. Please create a configuration file as i don't know what this directory is...".to_string());
+                    error!("{}", "No config file found.".to_string());
+                    println!("{}", "No config file found. Please create a configuration file as i don't know what this directory is...".to_string().bold().yellow());
                     process::exit(1);
                 }
                 Ok(path) => {
@@ -109,7 +120,6 @@ fn main() {
         None => "None".to_string(),
     };
 
-    if !matches.get_flag("debug") {
         println!(
             "{}",
             format!(
@@ -119,7 +129,6 @@ fn main() {
             .to_string()
             .if_supports_color(Stdout, |text| text.magenta())
         );
-    }
 
     if conf.hooks.len() != 0 {
         info!("Running hooks...");

@@ -52,7 +52,7 @@ pub fn setup_logger(matches: ArgMatches) -> Result<(), fern::InitError> {
         loglevel = LevelFilter::Info;
     }
     else {
-        loglevel = LevelFilter::Warn;
+        loglevel = LevelFilter::Off;
     }
     let colors = ColoredLevelConfig::new()
         .info(Color::Blue)

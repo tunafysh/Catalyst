@@ -4,7 +4,7 @@ use git2::{Repository, SubmoduleUpdateOptions};
 use log::{error, info, warn};
 use reqwest::Client;
 
-use crate::util::{detect_languages, extract_zip, find_file, package_zip, prompt};
+use crate::util::{extract_zip, find_file, package_zip, prompt};
 
 pub fn run_script(path: String) -> Result<(), LuaError> {
     let lua = Lua::new();
