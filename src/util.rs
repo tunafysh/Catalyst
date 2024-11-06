@@ -185,6 +185,11 @@ pub fn args() -> ArgMatches {
     cmd.get_matches()
 }
 
+pub fn is_tool(tool: &str) -> bool {
+    let output = Cmd::new(tool).output().unwrap();
+    output.status.success()
+}
+
 pub fn banner(matches: ArgMatches) {
     let sys = System::new_all();
     let debugmode = matches.get_flag("debug");

@@ -4,7 +4,7 @@ use git2::{Repository, SubmoduleUpdateOptions};
 use log::{error, info, warn};
 use reqwest::Client;
 
-use crate::util::{extract_zip, find_file, package_zip, prompt};
+use crate::util::{extract_zip, find_file, package_zip, prompt, is_tool};
 
 pub fn run_script(path: String) -> Result<(), LuaError> {
     let lua = Lua::new();
@@ -94,7 +94,7 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
     fs.set("readfile", lua.create_function(move |_, path: String| {
         let content = fs::read_to_string(path);
         match content {
-            Ok(content) => Ok(content),
+            Ok(content) => Ok(content.split_whitespace().map(|s| s.to_string()).collect::<Vec<String>>()),
             Err(err) => {
                 error!("Failed to read file: {}", err);
                 Err(mlua::Error::external("Failed to read file"))
@@ -161,6 +161,9 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
          Ok(())
     })?).unwrap();
 
+    let _ = globals.set("isTool", lua.create_function(move |_, tool: String| {
+        Ok(is_tool(tool.as_str()))
+    })?);
     let _ = globals.set("fs", fs);
     let _ = globals.set("git", git);
     let _ = globals.set("os", os);
