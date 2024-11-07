@@ -83,8 +83,20 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
         Ok(())
     })?).unwrap();
 
+    os.set("name", lua.create_function(move |_, _| {
+        Ok(env::consts::OS)
+    })?).unwrap();
+
+    os.set("arch", lua.create_function(move |_, _| {
+        Ok(env::consts::ARCH)
+    })?).unwrap();
+
     fs.set("getcwd", lua.create_function(move |_, _: ()| {
         Ok(env::current_dir().unwrap().display().to_string())
+    })?).unwrap();
+
+    fs.set("mkdir", lua.create_function(move |_, path: String| {
+        Ok(fs::create_dir_all(path));
     })?).unwrap();
 
     fs.set("exists", lua.create_function(move |_, path: String| {
