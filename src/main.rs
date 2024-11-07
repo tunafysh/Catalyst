@@ -88,7 +88,7 @@ fn main() {
             info!("{}", format!("Using configuration file: {}", config[0].if_supports_color(Stdout, |text| text.purple()).blue()));
         } else {
             info!("Scanning for config files...");
-            match util::find_file("src/.catalyst/", vec!["config.cly.json"]) {
+            match util::find_file(".catalyst/", vec!["config.cly.json"]) {
                 Err(_) => {
                     error!("{}", "No config file found.".to_string());
                     println!("{}", "No config file found. Please create a configuration file as i don't know what this directory is...".to_string().bold().yellow());
@@ -133,9 +133,9 @@ fn main() {
     if conf.hooks.len() != 0 {
         info!("Running hooks...");
         for hook in conf.hooks {
-            info!("{}", format!("src/.catalyst/{}.cly", hook));
+            info!("{}", format!(".catalyst/{}.cly", hook));
             println!("{}", format!("Running hook: {}", hook).to_string().if_supports_color(Stdout, |text| text.cyan()));
-            let _ = lua::run_script(format!("src/.catalyst/{}.cly", hook));
+            let _ = lua::run_script(format!(".catalyst/{}.cly", hook));
         }
     } else {
         warn!("No hooks found. Please create a hook as i don't know what to do here...");
