@@ -3,7 +3,7 @@ use owo_colors::{OwoColorize, Stream::Stdout};
 use clearscreen::clear;
 use log::{info, warn, error, debug};
 
-use crate::{lua::run_script, util::{banner, args, find_file}};
+use crate::{lua::run_lua, util::{banner, args, find_file}};
 
 pub fn debug() {
     clear().expect("failed to clear screen");
@@ -71,7 +71,7 @@ pub fn debug() {
                 }
                 else {
                     let path = find_file(".", vec![words[1]]).unwrap();
-                    run_script(path.display().to_string()).unwrap();
+                    run_lua(path.display().to_string()).unwrap();
                 }
             }
             "help" => {

@@ -1,6 +1,7 @@
 use std::{env::consts, fs, path::Path, process};
+use glob::glob;
 use owo_colors::{OwoColorize, Stream::Stdout};
-use log::{error, info, warn};
+use log::{error, info};
 use util::find_file;
 
 mod structs;
@@ -9,6 +10,7 @@ mod logger;
 mod debug;
 mod updater;
 mod lua;
+mod jscript;
 
 const CATALYST_VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -61,83 +63,59 @@ fn main() {
         debug::debug();
     }
 
-    if let Some(hooks) = matches.get_many::<String>("hook") {
-        for hook in hooks {
-            info!("{}", format!("Running hook: {}", hook).to_string().if_supports_color(Stdout, |text| text.cyan()));
-            let file = find_file(".", vec![hook]).unwrap();
-            let _ = lua::run_script(file.display().to_string());
+
+    let hook = matches.get_many::<String>("hook").unwrap_or_default().into_iter().map(|v| v.as_str()).collect::<Vec<_>>();
+    if !hook.is_empty() {
+        let script = fs::read_to_string(hook[0]).unwrap();
+        let first_line = script.lines().next().unwrap_or("").to_string();
+        info!("{}", first_line);
+        if first_line == "\"use js\"" {
+            let _ = jscript::run_js(script);
         }
-        process::exit(0);
+        else if first_line == "\"use lu\"a" {
+            let _ = lua::run_lua(script);
+        }
+        else {
+            error!("Invalid hook file");
+        }
     }
+    else{
 
-    let mut conf: structs::Config = structs::Config {
-        name: String::new(),
-        version: None,
-        working_directory: String::new(),
-        hooks: Vec::new(),
-    };
+        info!("Detecting hooks...");
+        let hooks = glob("**/*.cly").unwrap();
 
-    let config = matches.get_many::<String>("config").unwrap_or_default().into_iter().map(|v| v.as_str()).collect::<Vec<_>>();
+    info!("Running hooks...");
+    for hook in hooks {
+        match hook {
+            Ok(hook) => {
 
-        if config.len() != 0 {
-            if !config[0].contains(".cly.json") {
-                error!("{}", "Not a configuration file.".to_string());
-                process::exit(2);
-            }
-
-            info!("{}", format!("Using configuration file: {}", config[0].if_supports_color(Stdout, |text| text.purple()).blue()));
-        } else {
-            info!("Scanning for config files...");
-            match util::find_file(".catalyst/", vec!["config.cly.json"]) {
-                Err(_) => {
-                    error!("{}", "No config file found.".to_string());
-                    println!("{}", "No config file found. Please create a configuration file as i don't know what this directory is...".to_string().bold().yellow());
-                    process::exit(1);
-                }
-                Ok(path) => {
-                    info!("Found config file: {}", path.display().to_string().if_supports_color(Stdout, |text| text.purple()));
-                    let config = path.display().to_string();
-                    info!("Parsing...");
-                    conf = match fs::read_to_string(config) {
-                        Err(_) => {
-                            error!("{}", "Cannot read configuration file.".to_string());
-                            process::exit(3);
+                let hook = hook.display().to_string();
+                info!("{}", format!("Running hook: {}", hook).to_string().if_supports_color(Stdout, |text| text.cyan()));
+                match fs::read_to_string(&hook) {
+                    Ok(content) => {
+                        let first_line = content.lines().next().unwrap_or("").to_string();
+                        info!("{}", first_line);
+                        if first_line == "use js" {
+                            let _ = jscript::run_js(content);
                         }
-                        Ok(cf) => match serde_json::from_str(&cf) {
-                            Err(_) => {
-                                error!("{}", "Inavlid configuration file.".to_string());
-                                process::exit(4);
-                            }
-                            Ok(c) => c,
-                        },
-                    };
-                }
+                        else if first_line == "use lua" {
+                            let _ = lua::run_lua(content);
+                        }
+                        else {
+                            error!("Invalid hook file");
+                        }
+                        
+                    },
+                    Err(_) => {
+                        error!("Failed to read hook file");
+                        continue;
+                    }
+                };
             }
-    }
-
-    let confver = match conf.version {
-        Some(v) => v,
-        None => "None".to_string(),
-    };
-
-        println!(
-            "{}",
-            format!(
-                "Configuration:\n\t+ Project name: {}, \n\t+ Project version: {}, \n\t+ Current working directory: {}, \n\t+ Hooks: {}",
-                conf.name, confver, conf.working_directory, conf.hooks.join(", ")
-            )
-            .to_string()
-            .if_supports_color(Stdout, |text| text.magenta())
-        );
-
-    if conf.hooks.len() != 0 {
-        info!("Running hooks...");
-        for hook in conf.hooks {
-            info!("{}", format!(".catalyst/{}.cly", hook));
-            println!("{}", format!("Running hook: {}", hook).to_string().if_supports_color(Stdout, |text| text.cyan()));
-            let _ = lua::run_script(format!(".catalyst/{}.cly", hook));
+            Err(_) => {
+                error!("Failed to run hook");
+            }
         }
-    } else {
-        warn!("No hooks found. Please create a hook as i don't know what to do here...");
+    }
     }
 }

@@ -6,7 +6,7 @@ use reqwest::Client;
 
 use crate::util::{extract_zip, find_file, package_zip, prompt, is_tool};
 
-pub fn run_script(path: String) -> Result<(), LuaError> {
+pub fn run_lua(path: String) -> Result<(), LuaError> {
     let lua = Lua::new();
     let fs = lua.create_table().unwrap();
     let git = lua.create_table().unwrap();
@@ -83,11 +83,11 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
         Ok(())
     })?).unwrap();
 
-    os.set("name", lua.create_function(move |_, _| {
+    os.set("name", lua.create_function(move |_, _: ()| {
         Ok(env::consts::OS)
     })?).unwrap();
 
-    os.set("arch", lua.create_function(move |_, _| {
+    os.set("arch", lua.create_function(move |_, _: ()| {
         Ok(env::consts::ARCH)
     })?).unwrap();
 
@@ -96,7 +96,7 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
     })?).unwrap();
 
     fs.set("mkdir", lua.create_function(move |_, path: String| {
-        Ok(fs::create_dir_all(path));
+        Ok(fs::create_dir_all(path).unwrap())
     })?).unwrap();
 
     fs.set("exists", lua.create_function(move |_, path: String| {
@@ -193,7 +193,8 @@ pub fn run_script(path: String) -> Result<(), LuaError> {
         }
 
         Ok(chunk) => {
-            lua.load(chunk.as_str()).exec().expect("Failed to run script");
+            let script = chunk.lines().skip(1).collect::<Vec<_>>().join("\n");
+            lua.load(script.as_str()).exec().expect("Failed to run script");
         }
     }
     Ok(())
