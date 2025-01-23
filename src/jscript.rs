@@ -40,9 +40,14 @@ pub fn run_js(script: String) {
             JsValue::Int(0)
         }).unwrap();
 
-        context.add_callback("warn", |msg: String| -> JsValue {
-            warn!("{}", msg);
-            JsValue::Int(0)
+        context.add_callback("prompt", |msg: String| -> JsValue {
+            match prompt(msg) {
+                None => return JsValue::String(String::new()),
+                Some(input) => {
+                    return JsValue::String(input.clone().trim().to_string())
+                }
+            };
+            
         }).unwrap();
 
         context.add_callback("warn", |msg: String| -> JsValue {

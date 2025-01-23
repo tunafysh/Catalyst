@@ -9,19 +9,20 @@ use sysinfo::System;
 use walkdir::WalkDir;
 use owo_colors::{OwoColorize, Stream};
 use zip::{write::FullFileOptions, ZipArchive, ZipWriter};
+use dialoguer::Input;
 
 use crate::{structs, CATALYST_VERSION};
 
 pub fn prompt(msg: String) -> Option<String> {
-    print!("{}", msg);
-    let mut input = String::new();
-    io::stdout().flush().unwrap();
-    io::stdin().read_line(&mut input).unwrap();
-    if input.is_empty() {
+    let res: String = Input::new()
+        .with_prompt(msg)
+        .interact_text()
+        .expect("Failed to read input.");
+
+    if res.is_empty() {
         None
-    }
-    else {
-        Some(input.trim().to_string())
+    } else {
+        Some(res)
     }
 }
 
